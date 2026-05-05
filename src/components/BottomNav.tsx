@@ -1,17 +1,26 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/components/AuthProvider";
 
-const tabs = [
+const workerTabs = [
   { id: "jobs", label: "Práce", icon: "solar:case-round-bold", href: "/jobs" },
   { id: "messages", label: "Zprávy", icon: "solar:chat-round-bold", href: "/messages" },
   { id: "profile", label: "Profil", icon: "solar:user-bold", href: "/profile" },
 ];
 
+const employerTabs = [
+  { id: "jobs", label: "Inzeráty", icon: "solar:clipboard-list-bold", href: "/jobs" },
+  { id: "messages", label: "Zprávy", icon: "solar:chat-round-bold", href: "/messages" },
+  { id: "profile", label: "Profil", icon: "solar:buildings-bold", href: "/profile" },
+];
+
 export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const { profile } = useAuth();
 
+  const tabs = profile?.role === "employer" ? employerTabs : workerTabs;
   const currentTab = tabs.find((t) => pathname.startsWith(t.href))?.id || "jobs";
 
   return (

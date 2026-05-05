@@ -1,15 +1,35 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const targetRole = searchParams.get("role"); // "worker" | "employer" | null
+  const { user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace("/jobs");
+    }
+  }, [user, authLoading, router]);
+
+  // Show nothing while checking auth (prevents flash of login form)
+  if (authLoading || user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-transparent">
+        <div className="size-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +50,8 @@ export default function LoginPage() {
     router.push("/jobs");
   };
 
+  const roleLabel = targetRole === "employer" ? "zaměstnavatele" : targetRole === "worker" ? "brigádníka" : null;
+
   return (
     <div className="flex flex-col min-h-screen bg-transparent text-foreground">
       <div className="flex-1 flex flex-col items-center justify-center px-6">
@@ -38,9 +60,21 @@ export default function LoginPage() {
           <h1 className="font-heading text-6xl font-black tracking-tighter text-foreground mb-2">
             Makej!
           </h1>
-          <p className="text-muted-foreground text-sm font-medium tracking-wide">
-            Swipuj. Matchuj. Pracuj.
-          </p>
+          {roleLabel ? (
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <div className={`size-8 rounded-lg flex items-center justify-center ${targetRole === "worker" ? "bg-primary/20 text-primary" : "bg-secondary/20 text-secondary"}`}>
+                {/* @ts-expect-error - web component */}
+                <iconify-icon icon={targetRole === "worker" ? "solar:user-bold" : "solar:buildings-bold"} class="size-4" />
+              </div>
+              <p className="text-sm font-bold text-foreground">
+                Přihlášení jako {roleLabel}
+              </p>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm font-medium tracking-wide">
+              Swipuj. Matchuj. Pracuj.
+            </p>
+          )}
         </div>
 
         {/* Form */}
@@ -111,7 +145,7 @@ export default function LoginPage() {
           <p className="text-muted-foreground text-sm">
             Nemáš účet?{" "}
             <button
-              onClick={() => router.push("/register")}
+              onClick={() => router.push(targetRole ? `/register?role=${targetRole}` : "/register")}
               className="text-primary font-bold hover:underline"
             >
               Zaregistruj se

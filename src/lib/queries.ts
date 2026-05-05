@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { Job, Match, Message, UserProfile } from "./types";
+import type { Job, Match, Message, UserProfile, Review } from "./types";
 
 // ==================== JOBS ====================
 
@@ -204,4 +204,71 @@ export async function getEmployerJobs(employerId: string): Promise<Job[]> {
     .order("created_at", { ascending: false });
   if (error) console.error("Error fetching employer jobs:", error);
   return (data as Job[]) || [];
+}
+
+// ==================== REVIEWS ====================
+
+export async function getReviewsForUser(userId: string): Promise<Review[]> {
+  const { data, error } = await supabase
+    .from("reviews")
+    .select(`
+      *,
+      reviewer:profiles!reviews_reviewer_id_fkey(*)
+    `)
+    .eq("reviewed_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching reviews:", error);
+    return [];
+  }
+
+  return (data || []) as Review[];
+}
+
+export async function createReview(review: {
+  reviewer_id: string;
+  reviewed_id: string;
+  match_id: string;
+  rating: number;
+  text: string;
+}): Promise<Review | null> {
+  const { data, error } = await supabase
+    .from("reviews")
+    .insert(review)
+    .select()
+    .single();
+  if (error) {
+    if (error.code === "23505") return null; // Already reviewed
+    console.error("Error creating review:", error);
+  }
+  return data as Review | null;
+}
+
+// ==================== EMPLOYER CANDIDATE MANAGEMENT ====================
+
+export async function getMatchesForJob(jobId: string): Promise<(Match & { worker: UserProfile })[]> {
+  const { data, error } = await supabase
+    .from("matches")
+    .select(`
+      *,
+      worker:profiles!matches_worker_id_fkey(*)
+    `)
+    .eq("job_id", jobId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching matches for job:", error);
+    return [];
+  }
+
+  return (data || []) as (Match & { worker: UserProfile })[];
+}
+
+export async function updateMatchStatus(matchId: string, status: 'accepted' | 'rejected'): Promise<void> {
+  const { error } = await supabase
+    .from("matches")
+    .update({ status })
+    .eq("id", matchId);
+  if (error) console.error("Error updating match status:", error);
 }

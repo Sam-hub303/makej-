@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/components/AuthProvider";
 
 type UserRole = "worker" | "employer";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [step, setStep] = useState<1 | 2>(1);
   const [role, setRole] = useState<UserRole>("worker");
   const [name, setName] = useState("");
@@ -16,6 +18,21 @@ export default function RegisterPage() {
   const [companyName, setCompanyName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace("/jobs");
+    }
+  }, [user, authLoading, router]);
+
+  if (authLoading || user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-transparent">
+        <div className="size-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();

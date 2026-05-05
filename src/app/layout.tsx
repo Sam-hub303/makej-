@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import Script from "next/script";
+
 import { AuthProvider } from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
@@ -34,7 +34,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
         </AuthProvider>
-        <Script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js" strategy="afterInteractive" />
+        <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js" async></script>
       </body>
     </html>
   );

@@ -2,13 +2,275 @@
 
 import { useState, useCallback, useEffect } from "react";
 import JobCard from "@/components/JobCard";
-import type { Job } from "@/lib/types";
+import type { Job, Match, UserProfile } from "@/lib/types";
 import { useAuth } from "@/components/AuthProvider";
-import { getActiveJobs, createMatch, createRejection } from "@/lib/queries";
+import { getActiveJobs, createMatch, createRejection, getEmployerJobs, getMatchesForJob, updateMatchStatus } from "@/lib/queries";
 import Link from "next/link";
 
-export default function JobsPage() {
-  const { user } = useAuth();
+/* ─── Employer: Candidate Card ─────────────────────────────── */
+
+function CandidateCard({
+  match,
+  onAccept,
+  onReject,
+}: {
+  match: Match & { worker: UserProfile };
+  onAccept: () => void;
+  onReject: () => void;
+}) {
+  const w = match.worker;
+  if (!w) return null;
+
+  return (
+    <div className="flex items-center gap-3 p-4 bg-card/30 backdrop-blur-sm border border-white/5 rounded-2xl view-transition">
+      <div className="size-12 rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shrink-0">
+        {w.avatar_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={w.avatar_url} alt={w.name} className="w-full h-full rounded-full object-cover" />
+        ) : (
+          <span className="text-lg font-black text-white">{w.name?.charAt(0)}</span>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="font-heading font-bold text-white text-sm truncate">{w.name}</div>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <div className="flex items-center gap-0.5 text-secondary">
+            {[...Array(5)].map((_, i) => (
+              // @ts-expect-error - web component
+              <iconify-icon key={i} icon={i < Math.floor(w.rating || 0) ? "solar:star-bold" : "solar:star-line-duotone"} class="size-3" />
+            ))}
+          </div>
+          <span className="text-white/40 text-[10px] font-bold">{w.rating?.toFixed(1) || "0.0"}</span>
+          <span className="text-white/20 mx-1">·</span>
+          <span className="text-white/40 text-[10px] font-bold">{w.jobs_done || 0} prací</span>
+        </div>
+      </div>
+      <div className="flex gap-2 shrink-0">
+        {match.status === "pending" ? (
+          <>
+            <button
+              onClick={onReject}
+              className="size-10 rounded-full bg-destructive/10 border border-destructive/20 text-destructive flex items-center justify-center hover:bg-destructive/20 transition-all active:scale-90"
+            >
+              {/* @ts-expect-error - web component */}
+              <iconify-icon icon="solar:close-circle-bold" class="size-5" />
+            </button>
+            <button
+              onClick={onAccept}
+              className="size-10 rounded-full bg-primary/20 border border-primary/30 text-primary flex items-center justify-center hover:bg-primary/30 transition-all active:scale-90"
+            >
+              {/* @ts-expect-error - web component */}
+              <iconify-icon icon="solar:check-circle-bold" class="size-5" />
+            </button>
+          </>
+        ) : (
+          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+            match.status === "accepted"
+              ? "bg-primary/15 text-primary border border-primary/20"
+              : "bg-destructive/15 text-destructive border border-destructive/20"
+          }`}>
+            {match.status === "accepted" ? "Přijat" : "Odmítnut"}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Employer: Job Listing Card ───────────────────────────── */
+
+function EmployerJobCard({
+  job,
+  candidates,
+  isExpanded,
+  onToggle,
+  onAccept,
+  onReject,
+}: {
+  job: Job;
+  candidates: (Match & { worker: UserProfile })[];
+  isExpanded: boolean;
+  onToggle: () => void;
+  onAccept: (matchId: string) => void;
+  onReject: (matchId: string) => void;
+}) {
+  const pendingCount = candidates.filter((c) => c.status === "pending").length;
+
+  return (
+    <div className="bg-card/40 backdrop-blur-md border border-white/5 rounded-[1.5rem] overflow-hidden stat-card">
+      <button onClick={onToggle} className="w-full p-5 text-left">
+        <div className="flex items-start gap-4">
+          <div className="size-14 rounded-2xl overflow-hidden shrink-0 bg-primary/10">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={job.image_url} alt={job.title} className="w-full h-full object-cover" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-heading font-bold text-white text-base truncate">{job.title}</h3>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-white/50 text-xs">{job.location}</span>
+              <span className="text-white/20">·</span>
+              <span className="text-secondary text-xs font-bold">${job.pay}{job.pay_unit}</span>
+            </div>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="text-white/40 text-xs">{job.date}</span>
+              <span className="text-white/20">·</span>
+              <span className="text-white/40 text-xs">{job.time_start}–{job.time_end}</span>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            {pendingCount > 0 && (
+              <span className="px-2.5 py-1 rounded-full bg-primary text-white text-[10px] font-black">
+                {pendingCount} {pendingCount === 1 ? "kandidát" : pendingCount < 5 ? "kandidáti" : "kandidátů"}
+              </span>
+            )}
+            <div className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}>
+              {/* @ts-expect-error - web component */}
+              <iconify-icon icon="solar:alt-arrow-down-bold" class="size-5 text-white/30" />
+            </div>
+          </div>
+        </div>
+      </button>
+
+      {isExpanded && (
+        <div className="px-5 pb-5 space-y-3 border-t border-white/5 pt-4">
+          {candidates.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="text-white/30 text-sm">Zatím se nikdo nepřihlásil</p>
+            </div>
+          ) : (
+            candidates.map((c) => (
+              <CandidateCard
+                key={c.id}
+                match={c}
+                onAccept={() => onAccept(c.id)}
+                onReject={() => onReject(c.id)}
+              />
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Employer Dashboard ───────────────────────────────────── */
+
+function EmployerDashboard({ user }: { user: { id: string } }) {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [candidatesByJob, setCandidatesByJob] = useState<Record<string, (Match & { worker: UserProfile })[]>>({});
+  const [expandedJob, setExpandedJob] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      const myJobs = await getEmployerJobs(user.id);
+      setJobs(myJobs);
+
+      // Load candidates for all jobs
+      const candidates: Record<string, (Match & { worker: UserProfile })[]> = {};
+      for (const job of myJobs) {
+        candidates[job.id] = await getMatchesForJob(job.id);
+      }
+      setCandidatesByJob(candidates);
+      setLoading(false);
+    };
+    load();
+  }, [user.id]);
+
+  const handleAccept = async (matchId: string, jobId: string) => {
+    await updateMatchStatus(matchId, "accepted");
+    setCandidatesByJob((prev) => ({
+      ...prev,
+      [jobId]: prev[jobId].map((c) => (c.id === matchId ? { ...c, status: "accepted" as const } : c)),
+    }));
+
+    // Notification
+    const n = document.createElement("div");
+    n.className = "fixed top-20 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-3 rounded-full shadow-lg z-50";
+    n.innerHTML = `<div class="flex items-center gap-2"><iconify-icon icon="solar:check-circle-bold" class="size-5"></iconify-icon><span class="font-bold">Kandidát přijat!</span></div>`;
+    document.body.appendChild(n);
+    setTimeout(() => n.remove(), 1500);
+  };
+
+  const handleReject = async (matchId: string, jobId: string) => {
+    await updateMatchStatus(matchId, "rejected");
+    setCandidatesByJob((prev) => ({
+      ...prev,
+      [jobId]: prev[jobId].map((c) => (c.id === matchId ? { ...c, status: "rejected" as const } : c)),
+    }));
+  };
+
+  const totalCandidates = Object.values(candidatesByJob).reduce((sum, c) => sum + c.filter((m) => m.status === "pending").length, 0);
+
+  return (
+    <>
+      <header className="flex items-center justify-between px-6 py-4 z-10">
+        <div>
+          <h1 className="font-heading text-3xl font-extrabold tracking-tighter text-foreground">
+            Inzeráty
+          </h1>
+          {totalCandidates > 0 && (
+            <p className="text-secondary text-xs font-bold mt-0.5">
+              {totalCandidates} {totalCandidates === 1 ? "nový kandidát" : totalCandidates < 5 ? "noví kandidáti" : "nových kandidátů"}
+            </p>
+          )}
+        </div>
+        <Link
+          href="/jobs/new"
+          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
+        >
+          {/* @ts-expect-error - web component */}
+          <iconify-icon icon="solar:add-circle-bold" class="size-5" />
+          Přidat
+        </Link>
+      </header>
+
+      <main className="flex-1 overflow-y-auto px-4 pb-24">
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center py-20">
+            <div className="size-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : jobs.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center py-20 text-center px-6">
+            <div className="size-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              {/* @ts-expect-error - web component */}
+              <iconify-icon icon="solar:clipboard-list-line-duotone" class="size-10 text-primary/40" />
+            </div>
+            <h2 className="font-heading text-xl font-bold text-white mb-2">Zatím žádné inzeráty</h2>
+            <p className="text-white/40 text-sm mb-6 max-w-[250px]">Vytvoř první nabídku brigády a začni hledat kandidáty</p>
+            <Link
+              href="/jobs/new"
+              className="flex items-center gap-2 px-6 py-3.5 bg-white text-primary rounded-2xl font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+            >
+              {/* @ts-expect-error - web component */}
+              <iconify-icon icon="solar:add-circle-bold" class="size-5" />
+              Vytvořit brigádu
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {jobs.map((job) => (
+              <EmployerJobCard
+                key={job.id}
+                job={job}
+                candidates={candidatesByJob[job.id] || []}
+                isExpanded={expandedJob === job.id}
+                onToggle={() => setExpandedJob(expandedJob === job.id ? null : job.id)}
+                onAccept={(matchId) => handleAccept(matchId, job.id)}
+                onReject={(matchId) => handleReject(matchId, job.id)}
+              />
+            ))}
+          </div>
+        )}
+      </main>
+    </>
+  );
+}
+
+/* ─── Worker Swipe (existing) ──────────────────────────────── */
+
+function WorkerSwipe({ user }: { user: { id: string } }) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [currentJobIndex, setCurrentJobIndex] = useState(0);
   const [showNoMore, setShowNoMore] = useState(false);
@@ -16,7 +278,6 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
     const fetchJobs = async () => {
       setLoading(true);
       const activeJobs = await getActiveJobs(user.id);
@@ -25,13 +286,12 @@ export default function JobsPage() {
       setLoading(false);
     };
     fetchJobs();
-  }, [user]);
+  }, [user.id]);
 
   const showMatchNotification = (job: Job) => {
     const notification = document.createElement("div");
     notification.className =
       "fixed top-20 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-3 rounded-full shadow-lg z-50 flex items-center gap-2";
-    // @ts-expect-error - web component
     notification.innerHTML = `<iconify-icon icon="solar:heart-bold" class="size-5"></iconify-icon><span class="font-bold">Nová shoda s ${job.company}!</span>`;
     document.body.appendChild(notification);
     setTimeout(() => notification.remove(), 1500);
@@ -39,8 +299,6 @@ export default function JobsPage() {
 
   const handleSwipe = useCallback(
     async (direction: "left" | "right", job: Job) => {
-      if (!user) return;
-      
       const nextIndex = currentJobIndex + 1;
       if (nextIndex < jobs.length) {
         setCurrentJobIndex(nextIndex);
@@ -56,11 +314,10 @@ export default function JobsPage() {
         await createRejection(user.id, job.id);
       }
     },
-    [currentJobIndex, jobs.length, user]
+    [currentJobIndex, jobs.length, user.id]
   );
 
   const handleReset = async () => {
-    if (!user) return;
     setLoading(true);
     const activeJobs = await getActiveJobs(user.id);
     setJobs(activeJobs);
@@ -128,4 +385,24 @@ export default function JobsPage() {
       </main>
     </>
   );
+}
+
+/* ─── Main Page ────────────────────────────────────────────── */
+
+export default function JobsPage() {
+  const { user, profile } = useAuth();
+
+  if (!user || !profile) {
+    return (
+      <div className="flex-1 flex items-center justify-center h-full">
+        <div className="size-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (profile.role === "employer") {
+    return <EmployerDashboard user={user} />;
+  }
+
+  return <WorkerSwipe user={user} />;
 }

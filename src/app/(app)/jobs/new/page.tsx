@@ -48,6 +48,8 @@ export default function CreateJobPage() {
       company: profile.company_name || profile.name || "Neznámá firma",
       title: formData.title,
       location: formData.location,
+      lat: null,
+      lng: null,
       pay: Number(formData.pay),
       date: formData.date,
       time_start: formData.time_start,

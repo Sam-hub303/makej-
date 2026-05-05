@@ -1,5 +1,12 @@
 export type UserRole = 'worker' | 'employer';
 
+export interface WorkExperience {
+  title: string;
+  company: string;
+  period: string;
+  description: string;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -17,6 +24,9 @@ export interface UserProfile {
   total_earned: number;
   created_at: string;
   company_name?: string | null;
+  skills?: string[];
+  experience?: WorkExperience[];
+  education?: string | null;
 }
 
 export interface Job {
@@ -59,4 +69,15 @@ export interface Message {
   sender_id: string;
   text: string;
   created_at: string;
+}
+
+export interface Review {
+  id: string;
+  reviewer_id: string;
+  reviewed_id: string;
+  match_id: string | null;
+  rating: number;
+  text: string;
+  created_at: string;
+  reviewer?: UserProfile;
 }
