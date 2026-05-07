@@ -101,11 +101,10 @@ export default function JobCard({ job, onSwipe }: JobCardProps) {
           {job.tags.map((tag, index) => (
             <span
               key={index}
-              className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-full backdrop-blur-md ${
-                tag === "Žádané pozice"
+              className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-full backdrop-blur-md ${tag === "Žádané pozice"
                   ? "bg-secondary/20 text-secondary border border-secondary/50 shadow-[0_0_10px_rgba(255,255,255,0.3)]"
                   : "bg-white/10 text-white border border-white/20"
-              }`}
+                }`}
             >
               {tag === "Žádané pozice" ? "🔥 " : ""}{tag}
             </span>
@@ -121,7 +120,7 @@ export default function JobCard({ job, onSwipe }: JobCardProps) {
           </div>
           <div className="text-right shrink-0 pl-4">
             <span className="block font-heading text-5xl font-black text-foreground drop-shadow-[0_2px_10px_rgba(41,41,120,0.5)]">
-              ${job.pay}
+              {job.pay} Kč
             </span>
             <span className="text-white/70 text-sm font-bold uppercase tracking-wider">
               {job.pay_unit} {job.tips && "+ spropitné"}

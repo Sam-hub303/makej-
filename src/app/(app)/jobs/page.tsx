@@ -4,7 +4,10 @@ import { useState, useCallback, useEffect } from "react";
 import JobCard from "@/components/JobCard";
 import type { Job, Match, UserProfile } from "@/lib/types";
 import { useAuth } from "@/components/AuthProvider";
-import { getActiveJobs, createMatch, createRejection, getEmployerJobs, getMatchesForJob, updateMatchStatus } from "@/lib/queries";
+import { getActiveJobs, createMatch, createRejection, getEmployerJobs, getMatchesForJob, updateMatchStatus, sendMessage } from "@/lib/queries";
+import { supabase } from "@/lib/supabase";
+import { useNotifications } from "@/components/NotificationProvider";
+
 import Link from "next/link";
 
 /* ─── Employer: Candidate Card ─────────────────────────────── */
@@ -64,11 +67,10 @@ function CandidateCard({
             </button>
           </>
         ) : (
-          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-            match.status === "accepted"
+          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${match.status === "accepted"
               ? "bg-primary/15 text-primary border border-primary/20"
               : "bg-destructive/15 text-destructive border border-destructive/20"
-          }`}>
+            }`}>
             {match.status === "accepted" ? "Přijat" : "Odmítnut"}
           </span>
         )}
@@ -109,7 +111,7 @@ function EmployerJobCard({
             <div className="flex items-center gap-2 mt-1">
               <span className="text-white/50 text-xs">{job.location}</span>
               <span className="text-white/20">·</span>
-              <span className="text-secondary text-xs font-bold">${job.pay}{job.pay_unit}</span>
+              <span className="text-secondary text-xs font-bold">{job.pay} Kč{job.pay_unit}</span>
             </div>
             <div className="flex items-center gap-2 mt-1.5">
               <span className="text-white/40 text-xs">{job.date}</span>
@@ -156,6 +158,7 @@ function EmployerJobCard({
 /* ─── Employer Dashboard ───────────────────────────────────── */
 
 function EmployerDashboard({ user }: { user: { id: string } }) {
+  const { unreadCount, openPanel } = useNotifications();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [candidatesByJob, setCandidatesByJob] = useState<Record<string, (Match & { worker: UserProfile })[]>>({});
   const [expandedJob, setExpandedJob] = useState<string | null>(null);
@@ -167,7 +170,6 @@ function EmployerDashboard({ user }: { user: { id: string } }) {
       const myJobs = await getEmployerJobs(user.id);
       setJobs(myJobs);
 
-      // Load candidates for all jobs
       const candidates: Record<string, (Match & { worker: UserProfile })[]> = {};
       for (const job of myJobs) {
         candidates[job.id] = await getMatchesForJob(job.id);
@@ -178,19 +180,51 @@ function EmployerDashboard({ user }: { user: { id: string } }) {
     load();
   }, [user.id]);
 
+  // Realtime: new candidate swipes on our jobs, or match status changes (e.g. from web dashboard)
+  useEffect(() => {
+    const channel = supabase
+      .channel("employer-jobs-rt-" + user.id)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "matches" }, async (payload) => {
+        const m = payload.new as { id: string; job_id: string };
+        setJobs((prev) => {
+          if (!prev.some((j) => j.id === m.job_id)) return prev;
+          return prev; // trigger re-fetch of candidates for that job
+        });
+        const updated = await getMatchesForJob(m.job_id);
+        setCandidatesByJob((prev) => ({ ...prev, [m.job_id]: updated }));
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "matches" }, (payload) => {
+        const m = payload.new as { id: string; job_id: string; status: string };
+        setCandidatesByJob((prev) => ({
+          ...prev,
+          [m.job_id]: (prev[m.job_id] ?? []).map((c) =>
+            c.id === m.id ? { ...c, status: m.status as Match["status"] } : c
+          ),
+        }));
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "jobs" }, (payload) => {
+        const j = payload.new as { id: string; status: string };
+        setJobs((prev) => prev.map((job) => job.id === j.id ? { ...job, status: j.status as Job["status"] } : job));
+      })
+      .subscribe();
+    return () => { channel.unsubscribe(); };
+  }, [user.id]);
+
   const handleAccept = async (matchId: string, jobId: string) => {
     await updateMatchStatus(matchId, "accepted");
+    await sendMessage(matchId, user.id, "💬 Gratulujeme! Kandidát byl přijat — chat je nyní otevřen. Začněte si psát!");
     setCandidatesByJob((prev) => ({
       ...prev,
       [jobId]: prev[jobId].map((c) => (c.id === matchId ? { ...c, status: "accepted" as const } : c)),
     }));
+    // Mark job as filled in local state immediately (DB already updated via updateMatchStatus)
+    setJobs((prev) => prev.map((j) => j.id === jobId ? { ...j, status: "filled" as const } : j));
 
-    // Notification
     const n = document.createElement("div");
     n.className = "fixed top-20 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-3 rounded-full shadow-lg z-50";
-    n.innerHTML = `<div class="flex items-center gap-2"><iconify-icon icon="solar:check-circle-bold" class="size-5"></iconify-icon><span class="font-bold">Kandidát přijat!</span></div>`;
+    n.innerHTML = `<div class="flex items-center gap-2"><iconify-icon icon="solar:check-circle-bold" class="size-5"></iconify-icon><span class="font-bold">Kandidát přijat! Chat otevřen.</span></div>`;
     document.body.appendChild(n);
-    setTimeout(() => n.remove(), 1500);
+    setTimeout(() => n.remove(), 2000);
   };
 
   const handleReject = async (matchId: string, jobId: string) => {
@@ -216,14 +250,35 @@ function EmployerDashboard({ user }: { user: { id: string } }) {
             </p>
           )}
         </div>
-        <Link
-          href="/jobs/new"
-          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
-        >
-          {/* @ts-expect-error - web component */}
-          <iconify-icon icon="solar:add-circle-bold" class="size-5" />
-          Přidat
-        </Link>
+        <div className="flex items-center gap-2">
+          <a
+            href="http://localhost:3333/employer/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-3 py-2 bg-card border border-border/50 hover:bg-muted transition-colors rounded-full text-sm font-bold text-secondary"
+          >
+            {/* @ts-expect-error - web component */}
+            <iconify-icon icon="solar:chart-square-bold" class="size-4" />
+            Dashboard
+          </a>
+          <button onClick={openPanel} className="flex items-center justify-center size-10 rounded-full bg-card border border-border/50 hover:bg-muted transition-colors relative">
+            {/* @ts-expect-error - web component */}
+            <iconify-icon icon="solar:bell-bold" class="text-foreground size-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-destructive text-white text-[10px] font-black rounded-full flex items-center justify-center border border-background">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+          <Link
+            href="/jobs/new"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
+          >
+            {/* @ts-expect-error - web component */}
+            <iconify-icon icon="solar:add-circle-bold" class="size-5" />
+            Přidat
+          </Link>
+        </div>
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 pb-24">
@@ -271,6 +326,7 @@ function EmployerDashboard({ user }: { user: { id: string } }) {
 /* ─── Worker Swipe (existing) ──────────────────────────────── */
 
 function WorkerSwipe({ user }: { user: { id: string } }) {
+  const { unreadCount, openPanel } = useNotifications();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [currentJobIndex, setCurrentJobIndex] = useState(0);
   const [showNoMore, setShowNoMore] = useState(false);
@@ -339,11 +395,13 @@ function WorkerSwipe({ user }: { user: { id: string } }) {
             {/* @ts-expect-error - web component */}
             <iconify-icon icon="solar:filters-bold" class="text-foreground size-5" />
           </button>
-          <button className="flex items-center justify-center size-10 rounded-full bg-card border border-border/50 hover:bg-muted transition-colors relative">
+          <button onClick={openPanel} className="flex items-center justify-center size-10 rounded-full bg-card border border-border/50 hover:bg-muted transition-colors relative">
             {/* @ts-expect-error - web component */}
             <iconify-icon icon="solar:bell-bold" class="text-foreground size-5" />
-            {matches.length > 0 && (
-              <span className="absolute top-2 right-2 size-2 bg-secondary rounded-full border border-card" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-destructive text-white text-[10px] font-black rounded-full flex items-center justify-center border border-background">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
             )}
           </button>
         </div>

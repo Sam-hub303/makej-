@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
-import { updateProfile, getReviewsForUser } from "@/lib/queries";
+import { updateProfile, getReviewsForUser, deleteAccount } from "@/lib/queries";
 import type { UserProfile, Review, WorkExperience } from "@/lib/types";
 
 /* ─── Small Reusable Components ──────────────────────────────── */
@@ -337,12 +336,13 @@ function EditModal({
 
 export default function ProfilePage() {
   const { user, profile, refreshProfile, signOut } = useAuth();
-  const router = useRouter();
   const [showEdit, setShowEdit] = useState(false);
   const [activeTab, setActiveTab] = useState<ProfileTab>("about");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     if (user && activeTab === "reviews") {
@@ -378,14 +378,34 @@ export default function ProfilePage() {
   const targetRole = profile?.role === "worker" ? "employer" : "worker";
   const targetRoleLabel = targetRole === "worker" ? "brigádníka" : "zaměstnavatele";
 
-  const handleRoleSwitchLogin = async () => {
-    await signOut();
-    router.push(`/login?role=${targetRole}`);
+  // Hard navigation avoids a race with AppLayout's redirect-to-/login effect:
+  // signOut() clears the user, AppLayout sees user=null and would call
+  // router.replace("/login") (without the role query), clobbering our push.
+  // window.location.replace forces a full reload to the correct URL.
+  const handleRoleSwitchLogin = () => {
+    signOut();
+    window.location.replace(`/login?role=${targetRole}`);
   };
 
-  const handleRoleSwitchRegister = async () => {
-    await signOut();
-    router.push(`/register?role=${targetRole}`);
+  const handleRoleSwitchRegister = () => {
+    signOut();
+    window.location.replace(`/register?role=${targetRole}`);
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteLoading(true);
+    const result = await deleteAccount();
+    if (!result.ok) {
+      setDeleteLoading(false);
+      const err = document.createElement("div");
+      err.className = "fixed top-20 left-1/2 transform -translate-x-1/2 bg-destructive text-white px-6 py-3 rounded-full shadow-lg z-[60] transition-all";
+      err.textContent = `Chyba: ${result.error}`;
+      document.body.appendChild(err);
+      setTimeout(() => err.remove(), 3000);
+      return;
+    }
+    signOut();
+    window.location.replace("/login");
   };
 
   const nextXP = 2000;
@@ -397,10 +417,20 @@ export default function ProfilePage() {
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 z-10 shrink-0">
         <h1 className="font-heading text-2xl font-bold tracking-tight">Můj profil</h1>
-        <button onClick={signOut} className="flex items-center justify-center size-10 rounded-full bg-destructive/10 border border-destructive/20 text-destructive hover:bg-destructive/20 transition-colors">
-          {/* @ts-expect-error - web component */}
-          <iconify-icon icon="solar:logout-bold" class="size-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            aria-label="Smazat účet"
+            className="flex items-center justify-center size-10 rounded-full bg-destructive/10 border border-destructive/20 text-destructive hover:bg-destructive/20 transition-colors"
+          >
+            {/* @ts-expect-error - web component */}
+            <iconify-icon icon="solar:trash-bin-trash-bold" class="size-5" />
+          </button>
+          <button onClick={signOut} aria-label="Odhlásit" className="flex items-center justify-center size-10 rounded-full bg-muted/40 border border-white/10 text-white/70 hover:bg-muted/60 transition-colors">
+            {/* @ts-expect-error - web component */}
+            <iconify-icon icon="solar:logout-bold" class="size-5" />
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto px-6 pb-24 border-t border-border/10">
@@ -455,20 +485,17 @@ export default function ProfilePage() {
         <div className="mb-6">
           <div className="w-full bg-card/40 backdrop-blur-md border border-white/5 rounded-2xl p-1.5 flex relative overflow-hidden">
             <div
-              className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-gradient-to-r from-primary to-secondary rounded-xl shadow-lg transition-all duration-300 ease-out ${
-                isEmployer ? "left-[calc(50%+3px)]" : "left-1.5"
-              }`}
+              className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-gradient-to-r from-primary to-secondary rounded-xl shadow-lg transition-all duration-300 ease-out ${isEmployer ? "left-[calc(50%+3px)]" : "left-1.5"
+                }`}
             />
-            <div className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold z-10 transition-colors cursor-default ${
-              !isEmployer ? "text-white" : "text-white/40 cursor-pointer hover:text-white/60"
-            }`} onClick={() => !isEmployer ? null : setShowRoleModal(true)}>
+            <div className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold z-10 transition-colors cursor-default ${!isEmployer ? "text-white" : "text-white/40 cursor-pointer hover:text-white/60"
+              }`} onClick={() => !isEmployer ? null : setShowRoleModal(true)}>
               {/* @ts-expect-error - web component */}
               <iconify-icon icon="solar:user-bold" class="size-4" />
               Brigádník
             </div>
-            <div className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold z-10 transition-colors cursor-default ${
-              isEmployer ? "text-white" : "text-white/40 cursor-pointer hover:text-white/60"
-            }`} onClick={() => isEmployer ? null : setShowRoleModal(true)}>
+            <div className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold z-10 transition-colors cursor-default ${isEmployer ? "text-white" : "text-white/40 cursor-pointer hover:text-white/60"
+              }`} onClick={() => isEmployer ? null : setShowRoleModal(true)}>
               {/* @ts-expect-error - web component */}
               <iconify-icon icon="solar:buildings-bold" class="size-4" />
               Zaměstnavatel
@@ -482,11 +509,10 @@ export default function ProfilePage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === tab.id
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${activeTab === tab.id
                   ? "bg-gradient-to-r from-primary to-secondary text-white shadow-lg"
                   : "text-white/40 hover:text-white/60"
-              }`}
+                }`}
             >
               {/* @ts-expect-error - web component */}
               <iconify-icon icon={tab.icon} class="size-4" />
@@ -545,7 +571,7 @@ export default function ProfilePage() {
                 <StatsCard icon="solar:case-minimalistic-bold" value={profile.jobs_done || 0} label={isEmployer ? "Nabídnuté práce" : "Dokončené práce"} color="primary" />
                 <StatsCard icon="solar:clock-circle-bold" value={profile.hours_logged || 0} label={isEmployer ? "Hodiny obsazeny" : "Odpracované hodiny"} color="secondary" />
                 {!isEmployer && <StatsCard icon="solar:medal-star-bold" value={`${profile.punctuality || 100}%`} label="Docháznost" color="accent" />}
-                <StatsCard icon="solar:wallet-money-bold" value={`$${profile.total_earned || 0}`} label={isEmployer ? "Celkem vyplaceno" : "Celkový výdělek"} color="emerald" />
+                <StatsCard icon="solar:wallet-money-bold" value={`${profile.total_earned || 0} Kč`} label={isEmployer ? "Celkem vyplaceno" : "Celkový výdělek"} color="emerald" />
               </div>
             </div>
           )}
@@ -706,6 +732,40 @@ export default function ProfilePage() {
                 {/* @ts-expect-error - web component */}
                 <iconify-icon icon="solar:user-plus-bold" class="size-5" />
                 Zaregistrovat se
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Confirm Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 edit-mode">
+          <div className="bg-card/95 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 w-full max-w-sm">
+            <div className="flex items-center justify-center mb-4">
+              <div className="size-16 rounded-full bg-destructive/20 flex items-center justify-center">
+                {/* @ts-expect-error - web component */}
+                <iconify-icon icon="solar:danger-triangle-bold" class="size-8" style={{ color: "#f87171" }} />
+              </div>
+            </div>
+            <h2 className="font-heading text-lg font-black text-white text-center mb-2">Smazat účet?</h2>
+            <p className="text-white/50 text-sm text-center mb-6">
+              Tato akce je nevratná. Všechna tvá data, zprávy, matche a recenze budou trvale smazány.
+            </p>
+            <div className="space-y-3">
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteLoading}
+                className="w-full py-3.5 bg-destructive text-white rounded-xl font-bold hover:bg-destructive/80 transition-all disabled:opacity-50"
+              >
+                {deleteLoading ? "Mazání..." : "Ano, smazat účet"}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleteLoading}
+                className="w-full py-3.5 bg-card/80 border border-white/10 text-foreground rounded-xl font-medium hover:bg-muted transition-all disabled:opacity-50"
+              >
+                Zrušit
               </button>
             </div>
           </div>

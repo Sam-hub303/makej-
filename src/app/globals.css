@@ -3,37 +3,37 @@
 @theme inline {
   --color-background: #0f0f2d;
   --color-foreground: #ffffff;
-  
+
   --color-card: #16163b;
   --color-card-foreground: #ffffff;
-  
+
   --color-popover: #16163b;
   --color-popover-foreground: #ffffff;
-  
+
   --color-primary: #292978;
   --color-primary-foreground: #ffffff;
-  
+
   --color-secondary: #d0d0ff;
   --color-secondary-foreground: #0f0f2d;
-  
+
   --color-muted: #22224d;
   --color-muted-foreground: #9999cc;
-  
+
   --color-accent: #3a3a99;
   --color-accent-foreground: #ffffff;
-  
+
   --color-destructive: #f43f5e;
   --color-destructive-foreground: #ffffff;
-  
+
   --color-border: #22224d;
   --color-input: #22224d;
   --color-ring: #3a3a99;
-  
+
   --font-sans: var(--font-sans-custom);
   --font-heading: var(--font-heading-custom);
   --font-serif: var(--font-serif-custom);
   --font-mono: var(--font-mono-custom);
-  
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -74,7 +74,8 @@
   user-select: none;
 }
 
-input, textarea {
+input,
+textarea {
   -webkit-user-select: text;
   user-select: text;
 }
@@ -88,50 +89,123 @@ body {
 }
 
 /* Card swipe animations */
-.card-swipe { transition: all 0.3s ease-out; cursor: grab; }
-.card-swipe:active { cursor: grabbing; }
+.card-swipe {
+  transition: all 0.3s ease-out;
+  cursor: grab;
+}
+
+.card-swipe:active {
+  cursor: grabbing;
+}
 
 @keyframes heartPulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
-.heart-animation { animation: heartPulse 0.3s ease-out; }
+
+.heart-animation {
+  animation: heartPulse 0.3s ease-out;
+}
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.no-more-cards { animation: fadeIn 0.5s ease-out; }
-.view-transition { animation: fadeIn 0.25s ease-out; }
+
+.no-more-cards {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.view-transition {
+  animation: fadeIn 0.25s ease-out;
+}
 
 /* Chat animations */
-.chat-enter { animation: slideIn 0.3s ease-out; }
+.chat-enter {
+  animation: slideIn 0.3s ease-out;
+}
+
 @keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
-.message-bubble { animation: bubbleIn 0.2s ease-out; }
+.message-bubble {
+  animation: bubbleIn 0.2s ease-out;
+}
+
 @keyframes bubbleIn {
-  from { transform: scale(0.8); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
-.shift-card { animation: cardSlide 0.3s ease-out; }
+.shift-card {
+  animation: cardSlide 0.3s ease-out;
+}
+
 @keyframes cardSlide {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* Profile animations */
-.edit-mode { animation: slideUp 0.3s ease-out; }
-@keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+.edit-mode {
+  animation: slideUp 0.3s ease-out;
 }
 
-.stat-card { transition: all 0.3s ease-out; }
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.stat-card {
+  transition: all 0.3s ease-out;
+}
+
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 30px rgba(41, 41, 120, 0.4);
@@ -142,26 +216,58 @@ body {
   animation: fadeIn 0.3s ease-out;
   transition: all 0.3s ease-out;
 }
+
 .review-card:hover {
   transform: translateY(-1px);
-  border-color: rgba(255,255,255,0.1);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .skill-chip {
   animation: scaleIn 0.2s ease-out;
   transition: all 0.2s ease-out;
 }
+
 .skill-chip:hover {
   transform: scale(1.05);
 }
+
 @keyframes scaleIn {
-  from { transform: scale(0.8); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
-.timeline-item { animation: fadeIn 0.4s ease-out; }
-.timeline-item:nth-child(2) { animation-delay: 0.1s; }
-.timeline-item:nth-child(3) { animation-delay: 0.2s; }
+.timeline-item {
+  animation: fadeIn 0.4s ease-out;
+}
 
-.tab-content { animation: fadeIn 0.25s ease-out; }
+.timeline-item:nth-child(2) {
+  animation-delay: 0.1s;
+}
 
+.timeline-item:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.tab-content {
+  animation: fadeIn 0.25s ease-out;
+}
+
+/* iOS safe area utilities */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 1rem);
+}
+
+.h-dvh-safe {
+  height: 100dvh;
+}

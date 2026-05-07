@@ -8,7 +8,7 @@ import { createJob } from "@/lib/queries";
 export default function CreateJobPage() {
   const { user, profile } = useAuth();
   const router = useRouter();
-  
+
   const [formData, setFormData] = useState({
     title: "",
     location: "",
@@ -82,90 +82,90 @@ export default function CreateJobPage() {
         <form onSubmit={handleSubmit} className="space-y-6 max-w-md mx-auto">
           <div>
             <label className="block text-sm font-bold text-foreground mb-2">Pozice</label>
-            <input 
+            <input
               required
-              type="text" 
+              type="text"
               placeholder="Např. Barista, Číšník..."
-              value={formData.title} 
+              value={formData.title}
               onChange={e => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-3 bg-card border border-border/50 rounded-xl focus:ring-2 focus:ring-primary outline-none" 
+              className="w-full px-4 py-3 bg-card border border-border/50 rounded-xl focus:ring-2 focus:ring-primary outline-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-foreground mb-2">Lokace</label>
-              <input 
+              <input
                 required
-                type="text" 
+                type="text"
                 placeholder="Centrum, Praha"
-                value={formData.location} 
+                value={formData.location}
                 onChange={e => setFormData({ ...formData, location: e.target.value })}
-                className="w-full px-4 py-3 bg-card border border-border/50 rounded-xl focus:ring-2 focus:ring-primary outline-none" 
+                className="w-full px-4 py-3 bg-card border border-border/50 rounded-xl focus:ring-2 focus:ring-primary outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-foreground mb-2">Odměna ($/hod)</label>
-              <input 
+              <label className="block text-sm font-bold text-foreground mb-2">Odměna (Kč/hod)</label>
+              <input
                 required
-                type="number" 
+                type="number"
                 placeholder="150"
-                value={formData.pay} 
+                value={formData.pay}
                 onChange={e => setFormData({ ...formData, pay: e.target.value })}
-                className="w-full px-4 py-3 bg-card border border-border/50 rounded-xl focus:ring-2 focus:ring-primary outline-none" 
+                className="w-full px-4 py-3 bg-card border border-border/50 rounded-xl focus:ring-2 focus:ring-primary outline-none"
               />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-bold text-foreground mb-2">Datum</label>
-            <input 
+            <input
               required
-              type="text" 
+              type="text"
               placeholder="Zítra, 15.11."
-              value={formData.date} 
+              value={formData.date}
               onChange={e => setFormData({ ...formData, date: e.target.value })}
-              className="w-full px-4 py-3 bg-card border border-border/50 rounded-xl focus:ring-2 focus:ring-primary outline-none" 
+              className="w-full px-4 py-3 bg-card border border-border/50 rounded-xl focus:ring-2 focus:ring-primary outline-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-foreground mb-2">Začátek vr.</label>
-              <input 
+              <input
                 required
-                type="text" 
+                type="text"
                 placeholder="08:00"
-                value={formData.time_start} 
+                value={formData.time_start}
                 onChange={e => setFormData({ ...formData, time_start: e.target.value })}
-                className="w-full px-4 py-3 bg-card border border-border/50 rounded-xl focus:ring-2 focus:ring-primary outline-none" 
+                className="w-full px-4 py-3 bg-card border border-border/50 rounded-xl focus:ring-2 focus:ring-primary outline-none"
               />
             </div>
             <div>
               <label className="block text-sm font-bold text-foreground mb-2">Konec vr.</label>
-              <input 
+              <input
                 required
-                type="text" 
+                type="text"
                 placeholder="16:00"
-                value={formData.time_end} 
+                value={formData.time_end}
                 onChange={e => setFormData({ ...formData, time_end: e.target.value })}
-                className="w-full px-4 py-3 bg-card border border-border/50 rounded-xl focus:ring-2 focus:ring-primary outline-none" 
+                className="w-full px-4 py-3 bg-card border border-border/50 rounded-xl focus:ring-2 focus:ring-primary outline-none"
               />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-bold text-foreground mb-2">Popis (volitelně)</label>
-            <textarea 
+            <textarea
               placeholder="Co bude náplní práce..."
-              value={formData.description} 
+              value={formData.description}
               onChange={e => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-3 bg-card border border-border/50 rounded-xl focus:ring-2 focus:ring-primary outline-none h-32 resize-none" 
+              className="w-full px-4 py-3 bg-card border border-border/50 rounded-xl focus:ring-2 focus:ring-primary outline-none h-32 resize-none"
             />
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loading}
             className="w-full py-4 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-xl font-bold text-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
           >

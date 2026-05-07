@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nabídka práce - Makej!</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style type="text/tailwindcss">
+
+      @theme inline {
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-primary: var(--primary);
+        --color-primary-foreground: var(--primary-foreground);
+        --color-secondary: var(--secondary);
+        --color-secondary-foreground: var(--secondary-foreground);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-accent: var(--accent);
+        --color-accent-foreground: var(--accent-foreground);
+        --color-destructive: var(--destructive);
+        --color-card: var(--card);
+        --color-card-foreground: var(--card-foreground);
+        --color-popover: var(--popover);
+        --color-popover-foreground: var(--popover-foreground);
+        --color-border: var(--border);
+        --color-input: var(--input);
+        --color-ring: var(--ring);
+        --color-chart-1: var(--chart-1);
+        --color-chart-2: var(--chart-2);
+        --color-chart-3: var(--chart-3);
+        --color-chart-4: var(--chart-4);
+        --color-chart-5: var(--chart-5);
+
+        --font-font-sans: var(--font-sans);
+        --font-font-heading: var(--font-heading);
+        --font-font-serif: var(--font-serif);
+        --font-font-mono: var(--font-mono);
+
+        --radius-sm: calc(var(--radius) - 4px);
+        --radius-md: calc(var(--radius) - 2px);
+        --radius-lg: var(--radius);
+        --radius-xl: calc(var(--radius) + 4px);
+      }
+
+      :root {
+          --background: #09090b;
+        --foreground: #fafafa;
+        --primary: #a855f7;
+        --primary-foreground: #ffffff;
+        --secondary: #a3e635;
+        --secondary-foreground: #09090b;
+        --muted: #27272a;
+        --muted-foreground: #a1a1aa;
+        --accent: #27272a;
+        --accent-foreground: #fafafa;
+        --destructive: #f43f5e;
+        --card: #18181b;
+        --card-foreground: #fafafa;
+        --popover: #18181b;
+        --popover-foreground: #fafafa;
+        --border: #27272a;
+        --input: #27272a;
+        --ring: #a855f7;
+        --chart-1: #a855f7;
+        --chart-2: #a3e635;
+        --chart-3: #06b6d4;
+        --chart-4: #f59e0b;
+        --chart-5: #f43f5e;
+
+        --font-sans: "Plus Jakarta Sans";
+        --font-heading: "Space Grotesk";
+        --font-serif: "Playfair Display";
+        --font-mono: "JetBrains Mono";
+
+        --radius: 1rem;
+      }
+
+      * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .card-swipe {
+        transition: all 0.3s ease-out;
+        cursor: grab;
+      }
+
+      .card-swipe:active {
+        cursor: grabbing;
+      }
+
+      .card-swipe-left {
+        transform: translateX(-120%) rotate(-30deg);
+        opacity: 0;
+      }
+
+      .card-swipe-right {
+        transform: translateX(120%) rotate(30deg);
+        opacity: 0;
+      }
+
+      .card-swipe-up {
+        transform: translateY(-120%) scale(0.8);
+        opacity: 0;
+      }
+
+      @keyframes heartPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+      }
+
+      .heart-animation {
+        animation: heartPulse 0.3s ease-out;
+      }
+
+      @keyframes slideInNext {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .slide-in-next {
+        animation: slideInNext 0.3s ease-out;
+      }
+
+      .no-more-cards {
+        animation: fadeIn 0.5s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+
+      // Mock data
+      const jobsData = [
+        {
+          id: 1,
+          company: 'The Bean Scene',
+          position: 'Barista',
+          location: 'Centrum',
+          distance: '1.2 km',
+          pay: 18,
+          payUnit: '/ hod',
+          tips: true,
+          date: 'zítra',
+          time: '7:00 - 13:00',
+          duration: '6 hod',
+          image: 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/MHIY6QacKaF/components/FU7SALGOTUw.png',
+          tags: ['Žádané pozice', 'Bez zkušeností'],
+          description: 'Hledáme milého a spolehlivého baristu na ranní směny.',
+          requirements: ['Zájem o kávu', 'Spolehlivost', 'Příjemné vystupování']
+        },
+        {
+          id: 2,
+          company: 'Burger Palace',
+          position: 'Pomocník v kuchyni',
+          location: 'Nové Město',
+          distance: '2.1 km',
+          pay: 16,
+          payUnit: '/ hod',
+          tips: false,
+          date: 'dnes',
+          time: '17:00 - 22:00',
+          duration: '5 hod',
+          image: 'https://images.unsplash.com/photo-1568901346405-7dcbbdee2f4c?w=400',
+          tags: ['Pohodové'],
+          description: 'Pomoc v kuchyni v rušném burgerovém podniku.',
+          requirements: ['Zkušenosti v kuchyni výhodou', 'Rychlost', 'Čistota']
+        },
+        {
+          id: 3,
+          company: 'City Cafe',
+          position: 'Číšník',
+          location: 'Staré Město',
+          distance: '0.8 km',
+          pay: 17,
+          payUnit: '/ hod',
+          tips: true,
+          date: 'zítra',
+          time: '12:00 - 18:00',
+          duration: '6 hod',
+          image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
+          tags: ['Flexibilní'],
+          description: 'Obsluha hostů v moderní kavárně.',
+          requirements: ['Zkušenosti s obsluhou', 'Angličtina výhodou', 'Smích']
+        },
+        {
+          id: 4,
+          company: 'Pizza Express',
+          position: 'Řidič rozvozu',
+          location: 'Královské Vinohrady',
+          distance: '3.5 km',
+          pay: 15,
+          payUnit: '/ hod',
+          tips: true,
+          date: 'dnes',
+          time: '18:00 - 23:00',
+          duration: '5 hod',
+          image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400',
+          tags: ['Žádané pozice', 'Flexibilní'],
+          description: 'Rozvoz jídla na skútru.',
+          requirements: ['Řidičský průkaz', 'Přehled Prahy', 'Spolehlivost']
+        },
+        {
+          id: 5,
+          company: 'Sushi Master',
+          position: 'Sous Chef',
+          location: 'Karlín',
+          distance: '1.8 km',
+          pay: 22,
+          payUnit: '/ hod',
+          tips: true,
+          date: 'zítra',
+          time: '11:00 - 22:00',
+          duration: '11 hod',
+          image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400',
+          tags: ['Žádané pozice', 'Zkušenosti vyžadovány'],
+          description: 'Pomoc šéfkuchaři v moderní sushi restauraci.',
+          requirements: ['Zkušenosti s japonskou kuchyní', 'Preciznost', 'Týmový duch']
+        }
+      ];
+
+      // Store matches and rejections
+      let matches = [];
+      let rejections = [];
+
+      function JobCard({ job, onSwipe, onLike, onReject, onView }) {
+        const [isAnimating, setIsAnimating] = useState(false);
+        const cardRef = useRef(null);
+        
+        useEffect(() => {
+          const card = cardRef.current;
+          if (!card) return;
+
+          let startX = 0;
+          let currentX = 0;
+          let isDragging = false;
+
+          const handleStart = (x) => {
+            startX = x;
+            isDragging = true;
+            card.style.transition = 'none';
+          };
+
+          const handleMove = (x) => {
+            if (!isDragging) return;
+            currentX = x - startX;
+            card.style.transform = `translateX(${currentX}px) rotate(${currentX * 0.1}deg)`;
+            
+            // Add visual feedback
+            const opacity = Math.max(0.3, 1 - Math.abs(currentX) / 300);
+            card.style.opacity = opacity;
+          };
+
+          const handleEnd = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            card.style.transition = 'all 0.3s ease-out';
+            
+            const threshold = 100;
+            if (currentX > threshold) {
+              // Swipe right - like
+              card.style.transform = 'translateX(120%) rotate(30deg)';
+              card.style.opacity = '0';
+              setTimeout(() => onSwipe('right', job), 300);
+            } else if (currentX < -threshold) {
+              // Swipe left - reject
+              card.style.transform = 'translateX(-120%) rotate(-30deg)';
+              card.style.opacity = '0';
+              setTimeout(() => onSwipe('left', job), 300);
+            } else {
+              // Snap back
+              card.style.transform = 'translateX(0) rotate(0)';
+              card.style.opacity = '1';
+            }
+            
+            currentX = 0;
+          };
+
+          // Mouse events
+          card.addEventListener('mousedown', (e) => handleStart(e.clientX));
+          document.addEventListener('mousemove', (e) => handleMove(e.clientX));
+          document.addEventListener('mouseup', handleEnd);
+
+          // Touch events
+          card.addEventListener('touchstart', (e) => handleStart(e.touches[0].clientX));
+          document.addEventListener('touchmove', (e) => {
+            if (isDragging) handleMove(e.touches[0].clientX);
+          });
+          document.addEventListener('touchend', handleEnd);
+
+          return () => {
+            card.removeEventListener('mousedown', handleStart);
+            document.removeEventListener('mousemove', handleMove);
+            document.removeEventListener('mouseup', handleEnd);
+            card.removeEventListener('touchstart', handleStart);
+            document.removeEventListener('touchmove', handleMove);
+            document.removeEventListener('touchend', handleEnd);
+          };
+        }, [onSwipe, job]);
+
+        const handleLikeClick = () => {
+          setIsAnimating(true);
+          onLike(job);
+          setTimeout(() => onSwipe('right', job), 300);
+        };
+
+        const handleRejectClick = () => {
+          setIsAnimating(true);
+          onReject(job);
+          setTimeout(() => onSwipe('left', job), 300);
+        };
+
+        const handleViewClick = () => {
+          onView(job);
+          setTimeout(() => onSwipe('up', job), 300);
+        };
+
+        return (
+          <div
+            ref={cardRef}
+            className={`relative w-full h-full max-h-[75vh] rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 bg-card card-swipe ${isAnimating ? 'heart-animation' : ''}`}
+          >
+            <img
+              src={job.image}
+              alt={job.position}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/10"></div>
+            
+            <div className="absolute bottom-0 left-0 w-full p-6 flex flex-col justify-end">
+              <div className="flex gap-2 mb-4">
+                {job.tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-full backdrop-blur-md ${
+                      tag === 'Žádané pozice' 
+                        ? 'bg-secondary/20 text-secondary border border-secondary/50 shadow-[0_0_10px_rgba(163,230,53,0.3)]'
+                        : 'bg-white/10 text-white border border-white/20'
+                    }`}
+                  >
+                    {tag === 'Žádané pozice' ? '🔥 ' : ''}{tag}
+                  </span>
+                ))}
+              </div>
+              
+              <div className="flex justify-between items-end mb-5">
+                <div className="flex-1">
+                  <h2 className="font-heading text-4xl font-black text-white mb-1 leading-none tracking-tight shadow-black/50 drop-shadow-md">
+                    {job.position}
+                  </h2>
+                  <p className="text-white/80 text-lg font-medium tracking-wide">@ {job.company}</p>
+                </div>
+                <div className="text-right shrink-0 pl-4">
+                  <span className="block font-heading text-5xl font-black bg-clip-text text-transparent bg-gradient-to-br from-primary via-[#d946ef] to-secondary drop-shadow-[0_2px_10px_rgba(168,85,247,0.5)]">
+                    ${job.pay}
+                  </span>
+                  <span className="text-white/70 text-sm font-bold uppercase tracking-wider">
+                    {job.payUnit} {job.tips && '+ spropitné'}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-4 mb-8">
+                <div className="flex items-center gap-3 text-white bg-black/40 backdrop-blur-xl px-4 py-3 rounded-2xl border border-white/10 shadow-lg">
+                  <div className="flex items-center justify-center size-8 rounded-full bg-secondary/20 text-secondary">
+                    <iconify-icon icon="solar:map-point-bold" class="size-4"></iconify-icon>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-sm leading-tight">{job.location}</span>
+                    <span className="text-white/60 text-xs font-medium">{job.distance} daleko</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-white bg-black/40 backdrop-blur-xl px-4 py-3 rounded-2xl border border-white/10 shadow-lg">
+                  <div className="flex items-center justify-center size-8 rounded-full bg-primary/20 text-primary">
+                    <iconify-icon icon="solar:calendar-bold" class="size-4"></iconify-icon>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-sm leading-tight">{job.date}</span>
+                    <span className="text-white/60 text-xs font-medium">{job.time} ({job.duration})</span>
+                  </div>
+                </div>
+              </div>
+            
+            <div className="pb-8"></div>
+            </div>
+            
+            <div className="absolute bottom-0 left-0 w-full flex items-center justify-center gap-6 px-8 pb-4 z-20">
+              <button
+                onClick={handleRejectClick}
+                className="flex items-center justify-center size-16 rounded-full bg-card/80 border border-white/10 backdrop-blur-2xl text-destructive hover:bg-destructive/20 hover:border-destructive/50 transition-all shadow-xl hover:scale-105 active:scale-95"
+              >
+                <iconify-icon icon="solar:close-circle-bold" class="size-8"></iconify-icon>
+              </button>
+              <button
+                onClick={handleViewClick}
+                className="flex items-center justify-center size-16 rounded-full bg-card/80 border border-white/10 backdrop-blur-2xl text-accent hover:bg-accent/20 hover:border-accent/50 transition-all shadow-xl hover:scale-105 active:scale-95"
+              >
+                <iconify-icon icon="solar:eye-bold" class="size-8"></iconify-icon>
+              </button>
+              <button
+                onClick={handleLikeClick}
+                className="flex items-center justify-center size-20 rounded-full bg-gradient-to-br from-primary to-[#9333ea] text-white shadow-[0_0_40px_rgba(168,85,247,0.6)] hover:scale-110 active:scale-95 transition-all border-2 border-white/20"
+              >
+                <iconify-icon icon="solar:heart-angle-bold" class="size-10"></iconify-icon>
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      function NoMoreCards({ onReset }) {
+        return (
+          <div className="flex-1 flex items-center justify-center no-more-cards">
+            <div className="text-center max-w-sm px-6">
+              <iconify-icon icon="solar:heart-bold" class="size-20 text-muted-foreground mb-6 mx-auto"></iconify-icon>
+              <h2 className="font-heading text-2xl font-black text-white mb-4">To je pro dnešek vše!</h2>
+              <p className="text-muted-foreground mb-6">Prohlédl sis všechny dostupné nabídky. Zkuste to znovu později nebo si prohlédněte vaše matches.</p>
+              <div className="space-y-3">
+                <button
+                  onClick={() => window.location.href = 'messages.html'}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                  Zobrazit matches ({matches.length})
+                </button>
+                <button
+                  onClick={onReset}
+                  className="w-full px-6 py-3 bg-card/80 border border-border/50 text-foreground rounded-xl font-medium hover:bg-muted transition-all"
+                >
+                  Zkusit znovu
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      function App() {
+        const [jobs, setJobs] = useState(jobsData);
+        const [currentJobIndex, setCurrentJobIndex] = useState(0);
+        const [showNoMore, setShowNoMore] = useState(false);
+
+        useEffect(() => {
+          // Load matches from localStorage
+          const savedMatches = localStorage.getItem('makej_matches');
+          if (savedMatches) {
+            matches = JSON.parse(savedMatches);
+          }
+          
+          const savedRejections = localStorage.getItem('makej_rejections');
+          if (savedRejections) {
+            rejections = JSON.parse(savedRejections);
+          }
+        }, []);
+
+        const handleSwipe = (direction, job) => {
+          // Move to next card immediately
+          const nextIndex = currentJobIndex + 1;
+          if (nextIndex < jobs.length) {
+            setCurrentJobIndex(nextIndex);
+          } else {
+            setShowNoMore(true);
+          }
+
+          // Then handle the swipe action
+          if (direction === 'right') {
+            // Like - add to matches
+            if (!matches.find(m => m.id === job.id)) {
+              matches.push(job);
+              localStorage.setItem('makej_matches', JSON.stringify(matches));
+              
+              // Show notification
+              showMatchNotification(job);
+            }
+          } else if (direction === 'left') {
+            // Reject - add to rejections
+            if (!rejections.find(r => r.id === job.id)) {
+              rejections.push(job);
+              localStorage.setItem('makej_rejections', JSON.stringify(rejections));
+            }
+          }
+        };
+
+        const handleLike = (job) => {
+          console.log('Liked:', job.company);
+        };
+
+        const handleReject = (job) => {
+          console.log('Rejected:', job.company);
+        };
+
+        const handleView = (job) => {
+          console.log('View details:', job.company);
+          // Could open modal with full details
+        };
+
+        const showMatchNotification = (job) => {
+          // Create a simple notification
+          const notification = document.createElement('div');
+          notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-3 rounded-full shadow-lg z-50 fade-enter';
+          notification.innerHTML = `
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="solar:heart-bold" class="size-5"></iconify-icon>
+              <span class="font-bold">Nová shoda s ${job.company}!</span>
+            </div>
+          `;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.remove();
+          }, 3000);
+        };
+
+        const handleReset = () => {
+          setJobs(jobsData);
+          setCurrentJobIndex(0);
+          setShowNoMore(false);
+        };
+
+        const currentJob = jobs[currentJobIndex];
+
+        return (
+          <div className="flex flex-col h-screen w-full bg-background text-foreground overflow-hidden font-sans relative">
+            <header className="flex items-center justify-between px-6 py-4 z-10">
+              <h1 className="font-heading text-3xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
+                Makej!
+              </h1>
+              <div className="flex gap-3">
+                <button className="flex items-center justify-center size-10 rounded-full bg-card border border-border/50 hover:bg-muted transition-colors">
+                  <iconify-icon icon="solar:filters-bold" class="text-foreground size-5"></iconify-icon>
+                </button>
+                <button className="flex items-center justify-center size-10 rounded-full bg-card border border-border/50 hover:bg-muted transition-colors relative">
+                  <iconify-icon icon="solar:bell-bold" class="text-foreground size-5"></iconify-icon>
+                  {matches.length > 0 && (
+                    <span className="absolute top-2 right-2 size-2 bg-secondary rounded-full border border-card"></span>
+                  )}
+                </button>
+              </div>
+            </header>
+
+            <main className="flex-1 relative px-4 pb-4 overflow-hidden flex flex-col items-center justify-start z-10">
+              {showNoMore ? (
+                <NoMoreCards onReset={handleReset} />
+              ) : currentJob ? (
+                <JobCard
+                  job={currentJob}
+                  onSwipe={handleSwipe}
+                  onLike={handleLike}
+                  onReject={handleReject}
+                  onView={handleView}
+                />
+              ) : null}
+            </main>
+
+            <nav className="flex items-center justify-around px-6 py-4 bg-background/90 backdrop-blur-2xl border-t border-border z-20 pb-8">
+              <button className="flex flex-col items-center gap-1.5 text-primary transition-colors">
+                <iconify-icon icon="solar:cards-bold" class="size-7"></iconify-icon>
+                <span className="text-[10px] font-bold uppercase tracking-wider">Práce</span>
+              </button>
+              <button 
+                onClick={() => window.location.href = 'messages.html'}
+                className="flex flex-col items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors relative"
+              >
+                <iconify-icon icon="solar:chat-round-bold" class="size-7"></iconify-icon>
+                <span className="text-[10px] font-bold uppercase tracking-wider">Zprávy</span>
+                {matches.length > 0 && (
+                  <span className="absolute -top-1 -right-1 size-5 bg-secondary text-background rounded-full text-xs font-bold flex items-center justify-center">
+                    {matches.length}
+                  </span>
+                )}
+              </button>
+              <button 
+                onClick={() => window.location.href = 'user-profile.html'}
+                className="flex flex-col items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <iconify-icon icon="solar:user-bold" class="size-7"></iconify-icon>
+                <span className="text-[10px] font-bold uppercase tracking-wider">Profil</span>
+              </button>
+            </nav>
+          </div>
+        );
+      }
+
+      ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+  </body>
+</html>

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Uživatelský profil - Makej!</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style type="text/tailwindcss">
+
+      @theme inline {
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-primary: var(--primary);
+        --color-primary-foreground: var(--primary-foreground);
+        --color-secondary: var(--secondary);
+        --color-secondary-foreground: var(--secondary-foreground);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-accent: var(--accent);
+        --color-accent-foreground: var(--accent-foreground);
+        --color-destructive: var(--destructive);
+        --color-card: var(--card);
+        --color-card-foreground: var(--card-foreground);
+        --color-popover: var(--popover);
+        --color-popover-foreground: var(--popover-foreground);
+        --color-border: var(--border);
+        --color-input: var(--input);
+        --color-ring: var(--ring);
+        --color-chart-1: var(--chart-1);
+        --color-chart-2: var(--chart-2);
+        --color-chart-3: var(--chart-3);
+        --color-chart-4: var(--chart-4);
+        --color-chart-5: var(--chart-5);
+
+        --font-font-sans: var(--font-sans);
+        --font-font-heading: var(--font-heading);
+        --font-font-serif: var(--font-serif);
+        --font-font-mono: var(--font-mono);
+
+        --radius-sm: calc(var(--radius) - 4px);
+        --radius-md: calc(var(--radius) - 2px);
+        --radius-lg: var(--radius);
+        --radius-xl: calc(var(--radius) + 4px);
+      }
+
+      :root {
+          --background: #09090b;
+        --foreground: #fafafa;
+        --primary: #a855f7;
+        --primary-foreground: #ffffff;
+        --secondary: #a3e635;
+        --secondary-foreground: #09090b;
+        --muted: #27272a;
+        --muted-foreground: #a1a1aa;
+        --accent: #27272a;
+        --accent-foreground: #fafafa;
+        --destructive: #f43f5e;
+        --card: #18181b;
+        --card-foreground: #fafafa;
+        --popover: #18181b;
+        --popover-foreground: #fafafa;
+        --border: #27272a;
+        --input: #27272a;
+        --ring: #a855f7;
+        --chart-1: #a855f7;
+        --chart-2: #a3e635;
+        --chart-3: #06b6d4;
+        --chart-4: #f59e0b;
+        --chart-5: #f43f5e;
+
+        --font-sans: "Plus Jakarta Sans";
+        --font-heading: "Space Grotesk";
+        --font-serif: "Playfair Display";
+        --font-mono: "JetBrains Mono";
+
+        --radius: 1rem;
+      }
+
+      * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      input, textarea {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+
+      .edit-mode {
+        animation: slideUp 0.3s ease-out;
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .stat-card {
+        transition: all 0.3s ease-out;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(168, 85, 247, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect } = React;
+
+      // Load user data and stats from localStorage
+      const getUserData = () => {
+        const savedData = localStorage.getItem('makej_user_data');
+        if (savedData) {
+          return JSON.parse(savedData);
+        }
+        
+        // Default user data
+        return {
+          id: 1,
+          name: 'Samuel Pšeja',
+          email: 'samuel@example.cz',
+          phone: '+420 123 456 789',
+          bio: 'Rád pomáhám a učím se novým věcem. Spolehlivý a always on time!',
+          level: 12,
+          xp: 1250,
+          rating: 4.8,
+          jobsDone: 32,
+          hoursLogged: 124,
+          punctuality: 98,
+          totalEarned: 2410,
+          verified: true,
+          badges: ['quick_starter', 'flawless', '7_day_streak'],
+          avatar: 'https://lh3.googleusercontent.com/a/ACg8ocJynEXFGOLlKRabsq8-8Zbtt9QW-6u94dHQDkxcxxlqi5Rn1jg=s96-c'
+        };
+      };
+
+      // Calculate dynamic stats based on matches
+      const calculateStats = () => {
+        const matches = JSON.parse(localStorage.getItem('makej_matches') || '[]');
+        const rejections = JSON.parse(localStorage.getItem('makej_rejections') || '[]');
+        
+        return {
+          jobsDone: matches.length,
+          totalMatches: matches.length,
+          totalRejections: rejections.length,
+          matchRate: matches.length > 0 ? Math.round((matches.length / (matches.length + rejections.length)) * 100) : 0
+        };
+      };
+
+      function EditProfileModal({ user, onSave, onClose }) {
+        const [formData, setFormData] = useState({ ...user });
+
+        const handleSubmit = (e) => {
+          e.preventDefault();
+          onSave(formData);
+        };
+
+        const handleChange = (field, value) => {
+          setFormData(prev => ({ ...prev, [field]: value }));
+        };
+
+        return (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6 edit-mode">
+            <div className="bg-card/90 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-heading text-xl font-black text-white">Upravit profil</h2>
+                <button
+                  onClick={onClose}
+                  className="flex items-center justify-center size-8 rounded-full bg-muted/50 hover:bg-muted transition-colors"
+                >
+                  <iconify-icon icon="solar:close-bold" class="size-5"></iconify-icon>
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Jméno</label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleChange('name', e.target.value)}
+                    className="w-full px-4 py-3 bg-background border border-border/50 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                    className="w-full px-4 py-3 bg-background border border-border/50 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Telefon</label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => handleChange('phone', e.target.value)}
+                    className="w-full px-4 py-3 bg-background border border-border/50 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">O mně</label>
+                  <textarea
+                    value={formData.bio}
+                    onChange={(e) => handleChange('bio', e.target.value)}
+                    className="w-full px-4 py-3 bg-background border border-border/50 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary h-24 resize-none"
+                    placeholder="Něco o sobě..."
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 px-6 py-3 bg-card/80 border border-border/50 text-foreground rounded-xl font-medium hover:bg-muted transition-all"
+                  >
+                    Zrušit
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  >
+                    Uložit
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+      }
+
+      function StatsCard({ icon, value, label, color = 'primary' }) {
+        const colorClasses = {
+          primary: 'bg-primary/10 text-primary hover:border-primary/30',
+          secondary: 'bg-secondary/10 text-secondary hover:border-secondary/30',
+          accent: 'bg-white/10 text-white hover:border-white/30',
+          emerald: 'bg-emerald-500/10 text-emerald-400 hover:border-emerald-500/30'
+        };
+
+        return (
+          <div className={`bg-card/40 backdrop-blur-md border border-white/5 p-6 rounded-[2rem] stat-card ${colorClasses[color]}`}>
+            <div className="size-10 rounded-2xl bg-current/20 flex items-center justify-center mb-4">
+              <iconify-icon icon={icon} class="size-6"></iconify-icon>
+            </div>
+            <div className="font-heading text-3xl font-black text-white leading-none tracking-tight">{value}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-white/40 mt-2">{label}</div>
+          </div>
+        );
+      }
+
+      function ProfileView() {
+        const [user, setUser] = useState(getUserData());
+        const [showEditModal, setShowEditModal] = useState(false);
+        const [stats, setStats] = useState(calculateStats());
+
+        // Update stats when localStorage changes
+        useEffect(() => {
+          const handleStorageChange = () => {
+            setStats(calculateStats());
+          };
+
+          window.addEventListener('storage', handleStorageChange);
+          const interval = setInterval(handleStorageChange, 1000);
+
+          return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            clearInterval(interval);
+          };
+        }, []);
+
+        const handleSaveProfile = (updatedUser) => {
+          setUser(updatedUser);
+          localStorage.setItem('makej_user_data', JSON.stringify(updatedUser));
+          setShowEditModal(false);
+          
+          // Show success notification
+          const notification = document.createElement('div');
+          notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-3 rounded-full shadow-lg z-50 fade-enter';
+          notification.innerHTML = `
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="solar:check-circle-bold" class="size-5"></iconify-icon>
+              <span class="font-bold">Profil uložen!</span>
+            </div>
+          `;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.remove();
+          }, 3000);
+        };
+
+        const getNextLevelXP = () => {
+          return 2000; // Next level requires 2000 XP
+        };
+
+        const progressPercentage = (user.xp / getNextLevelXP()) * 100;
+
+        return (
+          <>
+            <div className="flex-1 overflow-y-auto px-6 pb-24">
+              <div className="flex flex-col items-center mt-6 mb-8">
+                <div className="relative mb-4">
+                  <div className="size-32 rounded-full border-[3px] border-primary p-1 bg-gradient-to-tr from-primary via-purple-500 to-secondary shadow-[0_0_25px_rgba(168,85,247,0.4)] relative">
+                    <img src={user.avatar} alt={user.name} className="w-full h-full rounded-full object-cover border-[3px] border-background" />
+                    <div className="absolute bottom-2 right-2 size-4 bg-secondary rounded-full border-2 border-background shadow-[0_0_10px_rgba(163,230,53,0.8)]"></div>
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 px-3 py-1 rounded-full bg-secondary flex items-center justify-center border-2 border-background text-background font-black text-[10px] uppercase tracking-tighter">
+                    LEVEL {user.level}
+                  </div>
+                </div>
+                <h2 className="font-heading text-3xl font-black text-white tracking-tight">{user.name}</h2>
+                <p className="text-white/50 text-xs font-bold uppercase tracking-[0.2em] mt-1 mb-2">
+                  {user.verified ? 'Ověřený pracovník' : 'Neověřený'}
+                </p>
+                <div className="flex items-center gap-1.5 text-secondary">
+                  {[...Array(5)].map((_, i) => (
+                    <iconify-icon 
+                      key={i}
+                      icon={i < Math.floor(user.rating) ? "solar:star-bold" : "solar:star-half-bold"} 
+                      class="size-4"
+                    ></iconify-icon>
+                  ))}
+                  <span className="text-white/60 text-xs font-black ml-1.5 px-2 py-0.5 bg-white/10 rounded-full">
+                    {user.rating}
+                  </span>
+                </div>
+                {user.bio && (
+                  <p className="text-muted-foreground text-sm mt-4 text-center max-w-xs">{user.bio}</p>
+                )}
+              </div>
+
+              <div className="bg-card/50 backdrop-blur-xl border border-white/5 rounded-[2rem] p-6 mb-8 shadow-xl">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/40">Pracovní zkušenosti</span>
+                    <span className="text-lg font-heading font-black text-white">Elite Pro</span>
+                  </div>
+                  <span className="text-[10px] font-black text-primary bg-primary/10 px-3 py-1.5 rounded-full uppercase tracking-widest border border-primary/30">
+                    {user.xp} / {getNextLevelXP()} XP
+                  </span>
+                </div>
+                <div className="w-full h-4 bg-muted rounded-full overflow-hidden border border-white/5 p-[2px]">
+                  <div
+                    className="h-full bg-gradient-to-r from-primary via-purple-500 to-secondary rounded-full shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all duration-1000"
+                    style={{ width: `${progressPercentage}%` }}
+                  ></div>
+                </div>
+                <div className="flex items-center gap-2 mt-4 text-[10px] text-white/40 font-bold uppercase tracking-tighter">
+                  <iconify-icon icon="solar:info-circle-bold" class="size-3 text-secondary"></iconify-icon>
+                  {getNextLevelXP() - user.xp} XP do levelu {user.level + 1} & odemčení 'Prémiových brigád'
+                </div>
+              </div>
+
+              {/* Badges Section */}
+              <div className="mb-8 overflow-hidden">
+                <div className="flex justify-between items-end mb-4 px-1">
+                  <h3 className="font-heading text-xl font-black text-white tracking-tight">
+                    Odemčené odznaky
+                  </h3>
+                  <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">
+                    Zobrazit vše
+                  </button>
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 no-scrollbar">
+                  <div className="flex flex-col items-center gap-2 min-w-[90px] shrink-0">
+                    <div className="size-20 rounded-[1.5rem] bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center shadow-lg relative group">
+                      <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <iconify-icon icon="fluent-emoji:rocket" class="size-10 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]"></iconify-icon>
+                    </div>
+                    <span className="text-[10px] font-black text-center uppercase tracking-tighter text-white/60">
+                      Rychlý startér
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2 min-w-[90px] shrink-0">
+                    <div className="size-20 rounded-[1.5rem] bg-gradient-to-br from-secondary/20 to-secondary/5 border border-secondary/30 flex items-center justify-center shadow-lg relative">
+                      <iconify-icon icon="fluent-emoji:hundred-points" class="size-10 drop-shadow-[0_0_8px_rgba(163,230,53,0.5)]"></iconify-icon>
+                    </div>
+                    <span className="text-[10px] font-black text-center uppercase tracking-tighter text-white/60">
+                      Bezchybný
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2 min-w-[90px] shrink-0">
+                    <div className="size-20 rounded-[1.5rem] bg-gradient-to-br from-orange-500/20 to-orange-500/5 border border-orange-500/30 flex items-center justify-center shadow-lg relative">
+                      <iconify-icon icon="fluent-emoji:fire" class="size-10 drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]"></iconify-icon>
+                    </div>
+                    <span className="text-[10px] font-black text-center uppercase tracking-tighter text-white/60">
+                      7denní série
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2 min-w-[90px] shrink-0 opacity-40 grayscale">
+                    <div className="size-20 rounded-[1.5rem] bg-card/50 border border-dashed border-white/10 flex items-center justify-center">
+                      <iconify-icon icon="solar:lock-bold" class="size-8 text-white/20"></iconify-icon>
+                    </div>
+                    <span className="text-[10px] font-black text-center uppercase tracking-tighter text-white/40">
+                      Nejlepší výdělec
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                <StatsCard
+                  icon="solar:case-minimalistic-bold"
+                  value={user.jobsDone}
+                  label="Dokončené práce"
+                  color="primary"
+                />
+                <StatsCard
+                  icon="solar:clock-circle-bold"
+                  value={user.hoursLogged}
+                  label="Odpracované hodiny"
+                  color="secondary"
+                />
+                <StatsCard
+                  icon="solar:medal-star-bold"
+                  value={`${user.punctuality}%`}
+                  label="Docháznost"
+                  color="accent"
+                />
+                <StatsCard
+                  icon="solar:wallet-money-bold"
+                  value={`$${user.totalEarned}`}
+                  label="Celkový výdělek"
+                  color="emerald"
+                />
+              </div>
+
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="w-full px-6 py-4 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
+              >
+                Upravit profil
+              </button>
+            </div>
+
+            {showEditModal && (
+              <EditProfileModal
+                user={user}
+                onSave={handleSaveProfile}
+                onClose={() => setShowEditModal(false)}
+              />
+            )}
+          </>
+        );
+      }
+
+      function App() {
+        return (
+          <div className="flex flex-col h-screen w-full bg-background text-foreground overflow-hidden font-sans">
+            <header className="flex items-center justify-between px-6 py-4 z-10 shrink-0">
+              <h1 className="font-heading text-2xl font-bold tracking-tight">Můj profil</h1>
+              <button className="flex items-center justify-center size-10 rounded-full bg-card border border-border/50 active:scale-95 transition-transform">
+                <iconify-icon icon="solar:settings-bold" class="text-foreground size-5"></iconify-icon>
+              </button>
+            </header>
+
+            <ProfileView />
+
+            <nav className="flex items-center justify-around px-6 py-4 bg-background/90 backdrop-blur-2xl border-t border-white/5 z-20 pb-8 shrink-0">
+              <button 
+                onClick={() => window.location.href = 'job-card.html'}
+                className="flex flex-col items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors group"
+              >
+                <iconify-icon icon="solar:cards-bold" class="size-7 group-active:scale-90 transition-transform"></iconify-icon>
+                <span className="text-[10px] font-black uppercase tracking-wider">Práce</span>
+              </button>
+              <button 
+                onClick={() => window.location.href = 'messages.html'}
+                className="flex flex-col items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors group"
+              >
+                <iconify-icon icon="solar:chat-round-bold" class="size-7 group-active:scale-90 transition-transform"></iconify-icon>
+                <span className="text-[10px] font-black uppercase tracking-wider">Zprávy</span>
+              </button>
+              <button className="flex flex-col items-center gap-1.5 text-primary transition-colors group">
+                <iconify-icon icon="solar:user-bold" class="size-7 group-active:scale-90 transition-transform"></iconify-icon>
+                <span className="text-[10px] font-black uppercase tracking-wider">Profil</span>
+              </button>
+            </nav>
+          </div>
+        );
+      }
+
+      ReactDOM.render(<App />, document.getElementById("root"));
+    </script>
+  </body>
+</html>

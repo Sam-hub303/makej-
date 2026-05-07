@@ -102,11 +102,15 @@ CREATE POLICY "Employers can create jobs" ON jobs FOR INSERT WITH CHECK (employe
 CREATE POLICY "Employers can update own jobs" ON jobs FOR UPDATE USING (employer_id = auth.uid());
 CREATE POLICY "Employers can delete own jobs" ON jobs FOR DELETE USING (employer_id = auth.uid());
 
--- Matches: users can see own matches
+-- Matches: workers see own, employers see matches for their jobs
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Workers see own matches" ON matches FOR SELECT USING (worker_id = auth.uid());
+CREATE POLICY "Employers see matches for own jobs" ON matches FOR SELECT
+  USING (EXISTS (SELECT 1 FROM jobs WHERE jobs.id = matches.job_id AND jobs.employer_id = auth.uid()));
 CREATE POLICY "Workers can create matches" ON matches FOR INSERT WITH CHECK (worker_id = auth.uid());
-CREATE POLICY "Match participants can update" ON matches FOR UPDATE USING (worker_id = auth.uid());
+CREATE POLICY "Workers can update own matches" ON matches FOR UPDATE USING (worker_id = auth.uid());
+CREATE POLICY "Employers can update match status" ON matches FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM jobs WHERE jobs.id = matches.job_id AND jobs.employer_id = auth.uid()));
 
 -- Messages: match participants can read/write
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
@@ -138,6 +142,21 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ============ DELETE ACCOUNT (GDPR) ============
+-- Deletes auth.users row, which cascades to profiles and all related data
+-- (jobs, matches, messages, rejections, reviews) via ON DELETE CASCADE
+CREATE OR REPLACE FUNCTION public.delete_my_account()
+RETURNS void AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  DELETE FROM auth.users WHERE id = auth.uid();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.delete_my_account() TO authenticated;
 
 -- ============ SEED DATA (sample jobs) ============
 -- NOTE: These use a placeholder employer_id. After you register as an employer,

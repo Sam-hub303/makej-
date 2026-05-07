@@ -26,6 +26,16 @@ export default function RegisterPage() {
     }
   }, [user, authLoading, router]);
 
+  // Pre-select role from URL param (?role=worker|employer) and skip step 1
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const roleParam = params.get("role");
+    if (roleParam === "worker" || roleParam === "employer") {
+      setRole(roleParam);
+      setStep(2);
+    }
+  }, []);
+
   if (authLoading || user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-transparent">

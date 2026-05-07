@@ -24,7 +24,7 @@ export default function BottomNav() {
   const currentTab = tabs.find((t) => pathname.startsWith(t.href))?.id || "jobs";
 
   return (
-    <nav className="flex items-center justify-around px-6 py-4 bg-background/90 backdrop-blur-2xl border-t border-border z-20 pb-8 shrink-0">
+    <nav className="flex items-center justify-around px-6 py-4 bg-background/90 backdrop-blur-2xl border-t border-border z-20 pb-safe shrink-0">
       {tabs.map((tab) => (
         <button
           key={tab.id}

@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { getMatchesForWorker, getMatchesForEmployer, getMessages, sendMessage, subscribeToMessages } from "@/lib/queries";
+import { useNotifications } from "@/components/NotificationProvider";
+
 
 interface Chat {
   id: string;
@@ -145,10 +147,21 @@ function ChatWindow({ chat, messages, onBack, onSendMessage }: {
 
 export default function MessagesPage() {
   const { user, profile } = useAuth();
+  const { openPanel, unreadCount, openChatMatchId, clearOpenChat } = useNotifications();
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [chats, setChats] = useState<Chat[]>([]);
   const [allMessages, setAllMessages] = useState<Record<string, ChatMessage[]>>({});
   const [loading, setLoading] = useState(true);
+
+  // Auto-open specific chat when navigating from a notification
+  useEffect(() => {
+    if (!openChatMatchId || chats.length === 0) return;
+    const chat = chats.find((c) => c.id === openChatMatchId);
+    if (chat) {
+      setSelectedChat(chat);
+      clearOpenChat();
+    }
+  }, [openChatMatchId, chats, clearOpenChat]);
 
   const formatTime = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -166,32 +179,38 @@ export default function MessagesPage() {
 
       if (profile.role === "worker") {
         const matches = await getMatchesForWorker(user.id);
-        newChats = matches.map((m: any) => ({
-          id: m.id,
-          company: m.employer?.company_name || m.employer?.name || "Zaměstnavatel",
-          position: m.job.title,
-          lastMessage: "Nová shoda!",
-          time: formatTime(m.created_at),
-          unread: 0,
-          status: m.status,
-          avatar: (m.employer?.company_name || m.employer?.name || "Z").charAt(0),
-          online: true,
-          participantId: m.employer?.id || "",
-        }));
+        // Only show chats for accepted matches
+        newChats = matches
+          .filter((m: any) => m.status === "accepted")
+          .map((m: any) => ({
+            id: m.id,
+            company: m.employer?.company_name || m.employer?.name || "Zaměstnavatel",
+            position: m.job.title,
+            lastMessage: "Nová shoda!",
+            time: formatTime(m.created_at),
+            unread: 0,
+            status: m.status,
+            avatar: (m.employer?.company_name || m.employer?.name || "Z").charAt(0),
+            online: true,
+            participantId: m.employer?.id || "",
+          }));
       } else {
         const matches = await getMatchesForEmployer(user.id);
-        newChats = matches.map((m: any) => ({
-          id: m.id,
-          company: m.worker?.name || "Brigádník",
-          position: m.job.title,
-          lastMessage: "Nová shoda!",
-          time: formatTime(m.created_at),
-          unread: 0,
-          status: m.status,
-          avatar: (m.worker?.name || "B").charAt(0),
-          online: true,
-          participantId: m.worker?.id || "",
-        }));
+        // Only show chats for accepted matches
+        newChats = matches
+          .filter((m: any) => m.status === "accepted")
+          .map((m: any) => ({
+            id: m.id,
+            company: m.worker?.name || "Brigádník",
+            position: m.job.title,
+            lastMessage: "Nová shoda!",
+            time: formatTime(m.created_at),
+            unread: 0,
+            status: m.status,
+            avatar: (m.worker?.name || "B").charAt(0),
+            online: true,
+            participantId: m.worker?.id || "",
+          }));
       }
 
       for (const chat of newChats) {
@@ -221,13 +240,16 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!user || chats.length === 0) return;
 
-    const subscriptions = chats.map(chat => 
+    const subscriptions = chats.map(chat =>
       subscribeToMessages(chat.id, (payload: any) => {
         const isFromMe = payload.sender_id === user.id;
-        
+
+        // Skip echo of own messages — already added optimistically in handleSendMessage
+        if (isFromMe) return;
+
         const newMsg: ChatMessage = {
           id: payload.id.toString(),
-          sender: isFromMe ? "user" : "company",
+          sender: "company",
           text: payload.text,
           time: formatTime(payload.created_at || new Date().toISOString()),
         };
@@ -280,17 +302,15 @@ export default function MessagesPage() {
         <h1 className="font-heading text-3xl font-extrabold tracking-tighter text-foreground">
           Zprávy
         </h1>
-        <div className="flex gap-3">
-          <button className="flex items-center justify-center size-10 rounded-full bg-card border border-border/50 hover:bg-muted transition-colors">
-            {/* @ts-expect-error - web component */}
-            <iconify-icon icon="solar:filters-bold" class="text-foreground size-5" />
-          </button>
-          <button className="flex items-center justify-center size-10 rounded-full bg-card border border-border/50 hover:bg-muted transition-colors relative">
-            {/* @ts-expect-error - web component */}
-            <iconify-icon icon="solar:bell-bold" class="text-foreground size-5" />
-            {chats.filter((c) => c.unread > 0).length > 0 && <span className="absolute top-2 right-2 size-2 bg-destructive rounded-full border border-card" />}
-          </button>
-        </div>
+        <button onClick={openPanel} className="flex items-center justify-center size-10 rounded-full bg-card border border-border/50 hover:bg-muted transition-colors relative">
+          {/* @ts-expect-error - web component */}
+          <iconify-icon icon="solar:bell-bold" class="text-foreground size-5" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-destructive text-white text-[10px] font-black rounded-full flex items-center justify-center border border-background">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
       </header>
 
       <main className="flex-1 relative overflow-hidden">

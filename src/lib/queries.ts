@@ -194,6 +194,15 @@ export async function updateProfile(userId: string, updates: Partial<UserProfile
   return data as UserProfile | null;
 }
 
+export async function deleteAccount(): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { error } = await supabase.rpc("delete_my_account");
+  if (error) {
+    console.error("Error deleting account:", error);
+    return { ok: false, error: error.message || "Smazání účtu selhalo" };
+  }
+  return { ok: true };
+}
+
 // ==================== EMPLOYER JOBS ====================
 
 export async function getEmployerJobs(employerId: string): Promise<Job[]> {
@@ -266,9 +275,24 @@ export async function getMatchesForJob(jobId: string): Promise<(Match & { worker
 }
 
 export async function updateMatchStatus(matchId: string, status: 'accepted' | 'rejected'): Promise<void> {
+  // Fetch job_id before updating so we can mark the job as filled on accept
+  const { data: match } = await supabase
+    .from("matches")
+    .select("job_id")
+    .eq("id", matchId)
+    .single();
+
   const { error } = await supabase
     .from("matches")
     .update({ status })
     .eq("id", matchId);
-  if (error) console.error("Error updating match status:", error);
+  if (error) { console.error("Error updating match status:", error); return; }
+
+  if (status === 'accepted' && match?.job_id) {
+    const { error: jobError } = await supabase
+      .from("jobs")
+      .update({ status: "filled" })
+      .eq("id", match.job_id);
+    if (jobError) console.error("Error marking job as filled:", jobError);
+  }
 }

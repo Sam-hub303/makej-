@@ -2,7 +2,7 @@
 
 ## Co je Makej!
 Mobilní app pro jednorázové brigády – funguje jako Tinder pro práci.
-Zaměstnavatel postne nabídku, brigádník swipne, systém je propojí přes chat.
+Zaměstnavatel postne nabídku, brigádník swipne, po příjetí brigádníka zaměstnavatelem je systém propojí přes chat.
 
 ## Tech stack
 - Next.js 14+ s TypeScriptem (App Router, static export)

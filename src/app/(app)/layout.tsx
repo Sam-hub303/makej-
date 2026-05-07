@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { NotificationProvider } from "@/components/NotificationProvider";
+import NotificationPanel from "@/components/NotificationPanel";
 import BottomNav from "@/components/BottomNav";
 
 export default function AppLayout({
@@ -32,11 +34,14 @@ export default function AppLayout({
   if (!user) return null;
 
   return (
-    <div className="flex flex-col h-screen w-full bg-transparent text-foreground overflow-hidden font-sans relative">
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {children}
+    <NotificationProvider>
+      <div className="flex flex-col h-dvh-safe w-full bg-transparent text-foreground overflow-hidden font-sans relative pt-safe">
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {children}
+        </div>
+        <BottomNav />
       </div>
-      <BottomNav />
-    </div>
+      <NotificationPanel />
+    </NotificationProvider>
   );
 }
