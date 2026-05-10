@@ -167,7 +167,7 @@ export default function CreateJobPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-xl font-bold text-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="w-full py-4 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-xl font-bold text-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             {loading ? "Vytvářím..." : "Vytvořit brigádu"}
           </button>

@@ -25,11 +25,20 @@ interface ChatMessage {
   text: string;
   time: string;
   type?: "shift_offer";
-  data?: { date: string; time: string; pay: string; location: string };
+  data?: { role?: string; date: string; time: string; pay: string | number; location: string };
 }
 
-function ShiftOfferCard({ offer }: { offer: NonNullable<ChatMessage["data"]> }) {
+function ShiftOfferCard({ offer, onAccept, onReject }: {
+  offer: NonNullable<ChatMessage["data"]>;
+  onAccept?: () => void;
+  onReject?: () => void;
+}) {
+  const [responded, setResponded] = useState<"accepted" | "rejected" | null>(null);
   if (!offer) return null;
+
+  const handleAccept = () => { setResponded("accepted"); onAccept?.(); };
+  const handleReject = () => { setResponded("rejected"); onReject?.(); };
+
   return (
     <div className="shift-card bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 rounded-2xl p-4 backdrop-blur-sm">
       <div className="flex items-center gap-2 mb-3">
@@ -40,37 +49,68 @@ function ShiftOfferCard({ offer }: { offer: NonNullable<ChatMessage["data"]> }) 
         <span className="font-bold text-primary">Nabídka směny</span>
       </div>
       <div className="space-y-2 mb-4">
+        {offer.role && (
+          <div className="text-foreground font-bold text-base">{offer.role}</div>
+        )}
         {[
           { icon: "solar:calendar-bold", text: offer.date },
           { icon: "solar:clock-bold", text: offer.time },
-          { icon: "solar:wallet-bold", text: offer.pay, cls: "text-secondary font-bold" },
-          { icon: "solar:map-point-bold", text: offer.location },
-        ].map((item, i) => (
+          { icon: "solar:wallet-bold", text: typeof offer.pay === 'number' ? `${offer.pay.toLocaleString('cs-CZ')} Kč` : offer.pay, cls: "text-secondary font-bold" },
+          offer.location ? { icon: "solar:map-point-bold", text: offer.location } : null,
+        ].filter(Boolean).map((item, i) => (
           <div key={i} className="flex items-center gap-2 text-sm">
             {/* @ts-expect-error - web component */}
-            <iconify-icon icon={item.icon} class="size-4 text-muted-foreground" />
-            <span className={item.cls || "text-foreground font-medium"}>{item.text}</span>
+            <iconify-icon icon={item!.icon} class="size-4 text-muted-foreground" />
+            <span className={item!.cls || "text-foreground font-medium"}>{item!.text}</span>
           </div>
         ))}
       </div>
-      <div className="flex gap-2">
-        <button className="flex-1 px-4 py-2 bg-card/80 border border-border/50 rounded-xl text-muted-foreground hover:bg-destructive/20 hover:border-destructive/50 hover:text-destructive transition-all text-sm font-medium">
-          Odmítnout
-        </button>
-        <button className="flex-1 px-4 py-2 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-xl hover:scale-105 active:scale-95 transition-all text-sm font-bold shadow-lg">
-          Přijmout
-        </button>
-      </div>
+      {(onAccept || onReject) && (
+        responded ? (
+          <div className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold ${responded === "accepted" ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-muted/30 text-muted-foreground border border-border/50"}`}>
+            {/* @ts-expect-error - web component */}
+            <iconify-icon icon={responded === "accepted" ? "solar:check-circle-bold" : "solar:close-circle-bold"} class="size-4" />
+            {responded === "accepted" ? "Přijato ✓" : "Odmítnuto"}
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              onClick={handleReject}
+              className="flex-1 px-4 py-2 bg-card/80 border border-border/50 rounded-xl text-muted-foreground hover:bg-destructive/20 hover:border-destructive/50 hover:text-destructive transition-all text-sm font-medium"
+            >
+              Odmítnout
+            </button>
+            <button
+              onClick={handleAccept}
+              className="flex-1 px-4 py-2 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-xl hover:scale-105 active:scale-95 transition-all text-sm font-bold shadow-lg"
+            >
+              Přijmout
+            </button>
+          </div>
+        )
+      )}
     </div>
   );
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
-  if (message.type === "shift_offer" && message.data) return <ShiftOfferCard offer={message.data} />;
+function MessageBubble({ message, onRespondToShift }: {
+  message: ChatMessage;
+  onRespondToShift?: (response: "accepted" | "rejected") => void;
+}) {
+  if (message.type === "shift_offer" && message.data) {
+    const isFromCompany = message.sender === "company";
+    return (
+      <ShiftOfferCard
+        offer={message.data}
+        onAccept={isFromCompany && onRespondToShift ? () => onRespondToShift("accepted") : undefined}
+        onReject={isFromCompany && onRespondToShift ? () => onRespondToShift("rejected") : undefined}
+      />
+    );
+  }
   const isUser = message.sender === "user";
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} message-bubble w-full`}>
-      <div className={`max-w-[80%] px-4 py-3 rounded-2xl ${isUser ? "bg-gradient-to-r from-primary to-secondary text-primary-foreground" : "bg-card/80 border border-border/50 text-foreground backdrop-blur-sm"}`}>
+      <div className={`max-w-[80%] px-4 py-3 rounded-2xl ${isUser ? "bg-gradient-to-r from-primary to-accent text-primary-foreground" : "bg-card/80 border border-border/50 text-foreground backdrop-blur-sm"}`}>
         <p className="text-sm font-medium whitespace-pre-wrap break-words">{message.text}</p>
         {message.time && <p className={`text-xs mt-1 ${isUser ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{message.time}</p>}
       </div>
@@ -78,11 +118,12 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   );
 }
 
-function ChatWindow({ chat, messages, onBack, onSendMessage }: {
+function ChatWindow({ chat, messages, onBack, onSendMessage, onRespondToShift }: {
   chat: Chat;
   messages: ChatMessage[];
   onBack: () => void;
   onSendMessage: (text: string) => void;
+  onRespondToShift?: (response: "accepted" | "rejected") => void;
 }) {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -122,7 +163,7 @@ function ChatWindow({ chat, messages, onBack, onSendMessage }: {
         </div>
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        {messages.map((m) => <MessageBubble key={m.id} message={m} />)}
+        {messages.map((m) => <MessageBubble key={m.id} message={m} onRespondToShift={onRespondToShift} />)}
         <div ref={messagesEndRef} />
       </div>
       <div className="p-4 bg-card/80 border-t border-border/50 backdrop-blur-sm pb-safe">
@@ -135,7 +176,7 @@ function ChatWindow({ chat, messages, onBack, onSendMessage }: {
             placeholder="Napiš zprávu..."
             className="flex-1 px-4 py-3 bg-background border border-border/50 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
-          <button onClick={handleSend} className="flex items-center justify-center size-12 rounded-full bg-gradient-to-r from-primary to-secondary text-primary-foreground hover:scale-105 active:scale-95 transition-all">
+          <button onClick={handleSend} className="flex items-center justify-center size-12 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground hover:scale-105 active:scale-95 transition-all">
             {/* @ts-expect-error - web component */}
             <iconify-icon icon="solar:paperplane-bold" class="size-5" />
           </button>
@@ -152,6 +193,8 @@ export default function MessagesPage() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [allMessages, setAllMessages] = useState<Record<string, ChatMessage[]>>({});
   const [loading, setLoading] = useState(true);
+  const selectedChatRef = useRef<Chat | null>(null);
+  useEffect(() => { selectedChatRef.current = selectedChat; }, [selectedChat]);
 
   // Auto-open specific chat when navigating from a notification
   useEffect(() => {
@@ -220,11 +263,13 @@ export default function MessagesPage() {
           sender: m.sender_id === user.id ? "user" : "company",
           text: m.text,
           time: formatTime(m.created_at),
+          type: m.type !== 'text' ? m.type : undefined,
+          data: m.metadata ?? undefined,
         }));
-        
+
         if (chatMsgs.length > 0) {
           const lastM = chatMsgs[chatMsgs.length - 1];
-          chat.lastMessage = lastM.text;
+          chat.lastMessage = lastM.type === 'shift_offer' ? '📅 Nabídka směny' : lastM.text;
           chat.time = formatTime(lastM.created_at);
         }
       }
@@ -252,6 +297,8 @@ export default function MessagesPage() {
           sender: "company",
           text: payload.text,
           time: formatTime(payload.created_at || new Date().toISOString()),
+          type: payload.type !== 'text' ? payload.type : undefined,
+          data: payload.metadata ?? undefined,
         };
 
         setAllMessages(prev => ({
@@ -259,41 +306,44 @@ export default function MessagesPage() {
           [chat.id]: [...(prev[chat.id] || []), newMsg]
         }));
 
-        setChats(prev => prev.map(c => 
-          c.id === chat.id 
-            ? { 
-                ...c, 
-                lastMessage: payload.text, 
+        setChats(prev => prev.map(c =>
+          c.id === chat.id
+            ? {
+                ...c,
+                lastMessage: payload.type === 'shift_offer' ? '📅 Nabídka směny' : payload.text,
                 time: newMsg.time,
-                unread: !isFromMe && selectedChat?.id !== chat.id ? c.unread + 1 : c.unread
-              } 
+                unread: selectedChatRef.current?.id !== chat.id ? c.unread + 1 : c.unread,
+              }
             : c
         ));
       })
     );
 
     return () => {
-      subscriptions.forEach(async (subPromise) => {
-        const channel = await subPromise;
-        channel.unsubscribe();
-      });
+      subscriptions.forEach(channel => channel.unsubscribe());
     };
-  }, [chats.length, user, selectedChat?.id]);
+  }, [chats.length, user]);
 
   const handleSendMessage = async (chatId: string, text: string) => {
     if (!user) return;
-    
+
     const tempId = `temp-${Date.now()}`;
     const tempMsg: ChatMessage = {
       id: tempId,
       sender: "user",
       text,
-      time: formatTime(new Date().toISOString())
+      time: formatTime(new Date().toISOString()),
     };
 
     setAllMessages(prev => ({ ...prev, [chatId]: [...(prev[chatId] || []), tempMsg] }));
-    
     await sendMessage(chatId, user.id, text);
+  };
+
+  const handleRespondToShift = async (chatId: string, response: "accepted" | "rejected") => {
+    const text = response === "accepted"
+      ? "✓ Přijímám nabídku směny!"
+      : "Bohužel tuto směnu nemohu přijmout.";
+    await handleSendMessage(chatId, text);
   };
 
   return (
@@ -319,14 +369,15 @@ export default function MessagesPage() {
             <div className="size-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : selectedChat ? (
-          <ChatWindow 
-            chat={selectedChat} 
-            messages={allMessages[selectedChat.id] || []} 
+          <ChatWindow
+            chat={selectedChat}
+            messages={allMessages[selectedChat.id] || []}
             onBack={() => {
               setSelectedChat(null);
               setChats(prev => prev.map(c => c.id === selectedChat.id ? { ...c, unread: 0 } : c));
-            }} 
-            onSendMessage={(text) => handleSendMessage(selectedChat.id, text)} 
+            }}
+            onSendMessage={(text) => handleSendMessage(selectedChat.id, text)}
+            onRespondToShift={(response) => handleRespondToShift(selectedChat.id, response)}
           />
         ) : chats.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center h-full text-center px-6">

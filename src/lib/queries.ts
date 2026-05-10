@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { Job, Match, Message, UserProfile, Review } from "./types";
+import type { Job, Match, Message, UserProfile, Review, ShiftOfferMetadata } from "./types";
 
 // ==================== JOBS ====================
 
@@ -144,14 +144,28 @@ export async function getMessages(matchId: string): Promise<Message[]> {
   return (data as Message[]) || [];
 }
 
-export async function sendMessage(matchId: string, senderId: string, text: string): Promise<Message | null> {
-  const { data, error } = await supabase
-    .from("messages")
-    .insert({ match_id: matchId, sender_id: senderId, text })
-    .select()
-    .single();
+export async function sendMessage(
+  matchId: string,
+  senderId: string,
+  text: string,
+  type = 'text',
+  metadata?: ShiftOfferMetadata,
+): Promise<Message | null> {
+  const payload: Record<string, unknown> = { match_id: matchId, sender_id: senderId, text };
+  // Only add type/metadata if they're non-default — keeps backwards compat before migration
+  if (type !== 'text') payload.type = type;
+  if (metadata) payload.metadata = metadata;
+  const { data, error } = await supabase.from("messages").insert(payload).select().single();
   if (error) console.error("Error sending message:", error);
   return data as Message | null;
+}
+
+export async function sendShiftOffer(
+  matchId: string,
+  senderId: string,
+  offer: ShiftOfferMetadata,
+): Promise<Message | null> {
+  return sendMessage(matchId, senderId, 'Nabídka směny', 'shift_offer', offer);
 }
 
 export function subscribeToMessages(matchId: string, onMessage: (msg: Message) => void) {

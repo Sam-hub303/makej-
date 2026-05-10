@@ -26,7 +26,7 @@ function CandidateCard({
 
   return (
     <div className="flex items-center gap-3 p-4 bg-card/30 backdrop-blur-sm border border-white/5 rounded-2xl view-transition">
-      <div className="size-12 rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shrink-0">
+      <div className="size-12 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center shrink-0">
         {w.avatar_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={w.avatar_url} alt={w.name} className="w-full h-full rounded-full object-cover" />
@@ -221,7 +221,7 @@ function EmployerDashboard({ user }: { user: { id: string } }) {
     setJobs((prev) => prev.map((j) => j.id === jobId ? { ...j, status: "filled" as const } : j));
 
     const n = document.createElement("div");
-    n.className = "fixed top-20 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-3 rounded-full shadow-lg z-50";
+    n.className = "fixed top-20 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-accent text-primary-foreground px-6 py-3 rounded-full shadow-lg z-50";
     n.innerHTML = `<div class="flex items-center gap-2"><iconify-icon icon="solar:check-circle-bold" class="size-5"></iconify-icon><span class="font-bold">Kandidát přijat! Chat otevřen.</span></div>`;
     document.body.appendChild(n);
     setTimeout(() => n.remove(), 2000);
@@ -272,7 +272,7 @@ function EmployerDashboard({ user }: { user: { id: string } }) {
           </button>
           <Link
             href="/jobs/new"
-            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
           >
             {/* @ts-expect-error - web component */}
             <iconify-icon icon="solar:add-circle-bold" class="size-5" />
@@ -347,7 +347,7 @@ function WorkerSwipe({ user }: { user: { id: string } }) {
   const showMatchNotification = (job: Job) => {
     const notification = document.createElement("div");
     notification.className =
-      "fixed top-20 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-3 rounded-full shadow-lg z-50 flex items-center gap-2";
+      "fixed top-20 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-accent text-primary-foreground px-6 py-3 rounded-full shadow-lg z-50 flex items-center gap-2";
     notification.innerHTML = `<iconify-icon icon="solar:heart-bold" class="size-5"></iconify-icon><span class="font-bold">Nová shoda s ${job.company}!</span>`;
     document.body.appendChild(notification);
     setTimeout(() => notification.remove(), 1500);

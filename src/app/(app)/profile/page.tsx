@@ -54,7 +54,7 @@ function ReviewCard({ review }: { review: Review }) {
   return (
     <div className="bg-card/40 backdrop-blur-md border border-white/5 rounded-[1.5rem] p-5 review-card">
       <div className="flex items-start gap-3 mb-3">
-        <div className="size-10 rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shrink-0">
+        <div className="size-10 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center shrink-0">
           <span className="text-sm font-black text-white">
             {(review.reviewer as UserProfile)?.name?.charAt(0) || "?"}
           </span>
@@ -109,11 +109,13 @@ const TABS: { id: ProfileTab; label: string; icon: string }[] = [
 function EditModal({
   profile,
   isEmployer,
+  saving,
   onClose,
   onSave,
 }: {
   profile: UserProfile;
   isEmployer: boolean;
+  saving: boolean;
   onClose: () => void;
   onSave: (data: Partial<UserProfile>) => void;
 }) {
@@ -319,11 +321,11 @@ function EditModal({
 
           {/* Action buttons */}
           <div className="flex gap-3 pt-2">
-            <button onClick={onClose} className="flex-1 px-6 py-3.5 bg-card/80 border border-white/10 text-foreground rounded-xl font-medium hover:bg-muted transition-all">
+            <button onClick={onClose} disabled={saving} className="flex-1 px-6 py-3.5 bg-card/80 border border-white/10 text-foreground rounded-xl font-medium hover:bg-muted transition-all disabled:opacity-50">
               Zrušit
             </button>
-            <button onClick={() => onSave(formData)} className="flex-1 px-6 py-3.5 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg">
-              Uložit
+            <button onClick={() => onSave(formData)} disabled={saving} className="flex-1 px-6 py-3.5 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg disabled:opacity-60 disabled:scale-100">
+              {saving ? "Ukládám…" : "Uložit"}
             </button>
           </div>
         </div>
@@ -337,6 +339,7 @@ function EditModal({
 export default function ProfilePage() {
   const { user, profile, refreshProfile, signOut } = useAuth();
   const [showEdit, setShowEdit] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<ProfileTab>("about");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
@@ -364,12 +367,22 @@ export default function ProfilePage() {
 
   const handleSave = async (formData: Partial<UserProfile>) => {
     if (!user) return;
-    await updateProfile(user.id, formData);
+    setSaving(true);
+    const result = await updateProfile(user.id, formData);
+    setSaving(false);
+    if (!result) {
+      const n = document.createElement("div");
+      n.className = "fixed top-20 left-1/2 transform -translate-x-1/2 bg-destructive text-white px-6 py-3 rounded-full shadow-lg z-50";
+      n.textContent = "Chyba při ukládání";
+      document.body.appendChild(n);
+      setTimeout(() => n.remove(), 2500);
+      return;
+    }
     await refreshProfile();
     setShowEdit(false);
 
     const n = document.createElement("div");
-    n.className = "fixed top-20 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-3 rounded-full shadow-lg z-50 transition-all";
+    n.className = "fixed top-20 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-accent text-primary-foreground px-6 py-3 rounded-full shadow-lg z-50 transition-all";
     n.innerHTML = `<div class="flex items-center gap-2"><iconify-icon icon="solar:check-circle-bold" class="size-5"></iconify-icon><span class="font-bold">Profil uložen!</span></div>`;
     document.body.appendChild(n);
     setTimeout(() => n.remove(), 1500);
@@ -437,7 +450,7 @@ export default function ProfilePage() {
         {/* ─── Avatar & Info ─────────────────────────── */}
         <div className="flex flex-col items-center mt-6 mb-6">
           <div className="relative mb-4">
-            <div className="size-28 rounded-full border-[3px] border-primary p-1 bg-gradient-to-tr from-primary to-secondary shadow-[0_0_25px_rgba(41,41,120,0.5)] relative flex items-center justify-center bg-card">
+            <div className="size-28 rounded-full border-[3px] border-primary p-1 bg-gradient-to-tr from-primary to-accent shadow-[0_0_25px_rgba(41,41,120,0.5)] relative flex items-center justify-center bg-card">
               {profile.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={profile.avatar_url} alt={profile.name} className="w-full h-full rounded-full object-cover border-[3px] border-background" />
@@ -473,7 +486,7 @@ export default function ProfilePage() {
 
           <button
             onClick={() => setShowEdit(true)}
-            className="mt-4 px-5 py-2.5 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg flex items-center gap-2"
+            className="mt-4 px-5 py-2.5 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg flex items-center gap-2"
           >
             {/* @ts-expect-error - web component */}
             <iconify-icon icon="solar:pen-bold" class="size-4" />
@@ -485,7 +498,7 @@ export default function ProfilePage() {
         <div className="mb-6">
           <div className="w-full bg-card/40 backdrop-blur-md border border-white/5 rounded-2xl p-1.5 flex relative overflow-hidden">
             <div
-              className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-gradient-to-r from-primary to-secondary rounded-xl shadow-lg transition-all duration-300 ease-out ${isEmployer ? "left-[calc(50%+3px)]" : "left-1.5"
+              className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-gradient-to-r from-primary to-accent rounded-xl shadow-lg transition-all duration-300 ease-out ${isEmployer ? "left-[calc(50%+3px)]" : "left-1.5"
                 }`}
             />
             <div className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold z-10 transition-colors cursor-default ${!isEmployer ? "text-white" : "text-white/40 cursor-pointer hover:text-white/60"
@@ -510,7 +523,7 @@ export default function ProfilePage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${activeTab === tab.id
-                  ? "bg-gradient-to-r from-primary to-secondary text-white shadow-lg"
+                  ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg"
                   : "text-white/40 hover:text-white/60"
                 }`}
             >
@@ -561,7 +574,7 @@ export default function ProfilePage() {
                     </span>
                   </div>
                   <div className="w-full h-4 bg-muted rounded-full overflow-hidden border border-white/5 p-[2px]">
-                    <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full shadow-[0_0_15px_rgba(41,41,120,0.5)] transition-all duration-1000" style={{ width: `${progress}%` }} />
+                    <div className="h-full bg-gradient-to-r from-primary to-accent rounded-full shadow-[0_0_15px_rgba(41,41,120,0.5)] transition-all duration-1000" style={{ width: `${progress}%` }} />
                   </div>
                 </div>
               )}
@@ -651,7 +664,7 @@ export default function ProfilePage() {
                 <>
                   {/* Summary */}
                   <div className="bg-card/40 backdrop-blur-md border border-white/5 rounded-[1.5rem] p-5 flex items-center gap-4">
-                    <div className="size-14 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                    <div className="size-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                       <span className="text-2xl font-heading font-black text-white">{profile.rating?.toFixed(1) || "0.0"}</span>
                     </div>
                     <div>
@@ -684,6 +697,7 @@ export default function ProfilePage() {
         <EditModal
           profile={profile}
           isEmployer={isEmployer}
+          saving={saving}
           onClose={() => setShowEdit(false)}
           onSave={handleSave}
         />
@@ -719,7 +733,7 @@ export default function ProfilePage() {
             <div className="space-y-3">
               <button
                 onClick={handleRoleSwitchLogin}
-                className="w-full py-3.5 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg flex items-center justify-center gap-2"
               >
                 {/* @ts-expect-error - web component */}
                 <iconify-icon icon="solar:login-bold" class="size-5" />

@@ -63,11 +63,21 @@ export interface Match {
   worker?: UserProfile;
 }
 
+export interface ShiftOfferMetadata {
+  role: string;
+  date: string;
+  time: string;
+  pay: number;
+  location: string;
+}
+
 export interface Message {
   id: string;
   match_id: string;
   sender_id: string;
   text: string;
+  type: string;
+  metadata: ShiftOfferMetadata | null;
   created_at: string;
 }
 
